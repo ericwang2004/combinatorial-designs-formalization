@@ -22,3 +22,12 @@ structure BIBD (X : Type u) [Fintype X] [DecidableEq X] extends Design X where
   hA : ∀ B ∈ blocks, Finset.card B = k
   balance : ∀ x y : X, x ≠ y →
     Multiset.countP (fun B ↦ x ∈ B ∧ y ∈ B) blocks = l
+
+variable {X : Type u} [Fintype X] [DecidableEq X]
+
+def pointOccurrences (Φ : BIBD X) (x : X) :=
+  countP (fun B ↦ x ∈ B) Φ.blocks
+
+theorem pointOccurrences_constant (Φ : BIBD X) :
+    ∃ r, ∀ x : X, pointOccurrences Φ x = r := by
+  sorry
