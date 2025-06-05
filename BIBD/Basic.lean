@@ -5,84 +5,75 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Multiset.Basic
 
-universe u
+open Finset
 
-structure Design (X : Type u) where
+structure Design (X : Type*) where
   mk ::
-  blocks : Multiset (Finset X)
+  b : ℕ
+  blocks : Fin b → Finset X
 
-structure BIBD (X : Type u) [Fintype X] [DecidableEq X] extends Design X where
+structure BIBD (X : Type*) [Fintype X] [DecidableEq X] extends Design X where
   mk ::
   v : ℕ
   k : ℕ
   l : ℕ
   r : ℕ
   hvk : v > k ∧ k ≥ 2
-  hr : r * (k - 1) = l * (v - 1)
   hX : Fintype.card X = v
-  hA : ∀ B ∈ blocks, Finset.card B = k
-  balance : ∀ x y : X, x ≠ y →
-    Multiset.countP (fun B ↦ x ∈ B ∧ y ∈ B) blocks = l
+  hA : ∀ i : Fin b, #(blocks i) = k
+  balance : ∀ x y : X, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
 
-variable {X : Type u} [Fintype X] [DecidableEq X] [Fintype (Finset X)] [Fintype (X × Finset X)]
+variable {X : Type*} [Fintype X] [DecidableEq X] {Φ : BIBD X} [Fintype (X × Fin Φ.b)] [Fintype (Fin Φ.b × X)]
 
-theorem card_dependent {α : Type u} [Fintype α] [DecidableEq α] [Fintype (α × Finset X)] {Φ : BIBD X}
+def rep (Φ : BIBD X) (x : X) := #{i | x ∈ Φ.blocks i}
+
+#check Finset.equivFin
+theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β] [Fintype (α × β)]
     (P : α → Prop) [DecidablePred P]
-    (Q : α → Finset X → Prop) [∀ x, DecidablePred (Q x)]
-    (k : ℕ) (hk : ∀ y, P y → Multiset.countP (fun A ↦ Q y A) Φ.blocks = k) :
-    Finset.card {(y, A) | P y ∧ Q y A} = k * Finset.card {y | P y} := by
+    (Q : α → β → Prop) [∀ x, DecidablePred (Q x)]
+    {k : ℕ} (hk : ∀ x, P x → #{y | Q x y} = k) :
+    #{(x, y) | P x ∧ Q x y} = k * #{x | P x} := by
   sorry
 
-theorem card_dependent' {α : Type u} [Fintype α] [DecidableEq α] [Fintype (α × Finset X)] {Φ : BIBD X}
-    (P : Finset X → Prop) [DecidablePred P]
-    (Q : α → Finset X → Prop) [∀ x, DecidablePred (Q x)]
-    (k : ℕ) (hk : ∀ A, P A → Finset.card {y | Q y A} = k) :
-    Finset.card {(y, A) | P A ∧ Q y A} = (Multiset.countP P Φ.blocks) * k := by
-  sorry
-
-def rep (Φ : BIBD X) (x : X) :=
-  Multiset.countP (fun B ↦ x ∈ B) Φ.blocks
-
-theorem rep_constant (Φ : BIBD X) :
-    ∀ x : X, rep Φ x = Φ.r := by
+theorem rep_constant : ∀ x : X, (Φ.k - 1) * rep Φ x = Φ.l * (Φ.v - 1) := by
   intro x
-  let I := {(y, A) | (x ≠ y) ∧ A ∈ Φ.blocks ∧ x ∈ A ∧ y ∈ A}
-  let P : X → Prop := fun y ↦ x ≠ y
-  let Q : X → Finset X → Prop := fun y A ↦ A ∈ Φ.blocks ∧ x ∈ A ∧ y ∈ A
-  have defI : I = (Finset.filter (fun x : X × Finset X => P x.1 ∧ Q x.1 x.2) Finset.univ) := by
-    simp_all only [ne_eq, Finset.coe_filter, Finset.mem_univ, true_and, I, P, Q]
-  have aux : ∀ y, P y → Multiset.countP (fun A ↦ Q y A) Φ.blocks = Φ.l := by
-    intro y hxy
-    rw [←Φ.balance x y hxy]
-    simp_all only [ne_eq, true_and, I, P, Q]
-  have ne_univ_setminus : (Finset.filter P Finset.univ) = Finset.univ.erase x := by
-    ext y
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase, ne_comm, ne_eq, and_true]
-  have size_P : Finset.card {y | P y} = Φ.v - 1 := by
-    rw [ne_univ_setminus, ←Φ.hX, ←Finset.card_univ]
-    simp only [Finset.mem_univ, Finset.card_erase_of_mem, Finset.card_univ]
-  have count₁ := card_dependent P Q Φ.l aux
-  rw [size_P] at count₁
-  simp only at count₁
-  let P' : Finset X → Prop := fun A ↦ A ∈ Φ.blocks ∧ x ∈ A
-  let Q' : X → Finset X → Prop := fun y A ↦ x ≠ y ∧ y ∈ A
-  --have defI' : I = {(y, A) | P' A ∧ Q' y A} := by aesop
-  have : ∀ A, (Finset.filter (fun y => Q' y A) Finset.univ) = A.erase x := by
-    aesop -- TODO: get rid of this
-  have aux' : ∀ A, P' A → Finset.card {y | Q' y A} = Φ.k - 1 := by
-    intro A hA
-    rw [this A, ←Φ.hA A (hA.1)]
-    simp_all only [Finset.coe_filter, Finset.mem_univ, Finset.card_erase_of_mem, Finset.card_univ, I,
-      P, Q, Q', P']
-  have count₂ := card_dependent' (Φ := Φ) P' Q' (Φ.k - 1) aux'
-  have count_P' : Multiset.countP P' Φ.blocks = rep Φ x := by
-    simp_all only [ne_eq, Finset.coe_filter, Finset.mem_univ, true_and, Finset.card_erase_of_mem, Finset.card_univ,
-      and_imp, I, P, Q, Q', P']
-    rfl
-  rw [count_P'] at count₂
-  simp only at count₂
-  have compare_counts : (Finset.filter (fun x : X × Finset X ↦ P x.1 ∧ Q x.1 x.2) Finset.univ)
-      = (Finset.filter (fun x => P' x.2 ∧ Q' x.1 x.2) Finset.univ) := by
-    aesop -- TODO: get rid of this
-  rw [compare_counts, count₂, ←Φ.hr] at count₁
-  exact Nat.eq_of_mul_eq_mul_right (Nat.zero_lt_sub_of_lt Φ.hvk.2) count₁
+  let I : Finset (X × Fin Φ.b) := {(y, i) : X × Fin Φ.b | x ≠ y ∧ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i}
+  let P₁ : X → Prop := fun y ↦ x ≠ y
+  let Q₁ : X → Fin Φ.b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = Φ.l := Φ.balance x
+  have count₁ := card_dependent P₁ Q₁ aux₁
+  let P₂ : Fin Φ.b → Prop := fun i ↦ x ∈ Φ.blocks i
+  let Q₂ : Fin Φ.b → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
+  have : ∀ i, filter (fun y ↦ Q₂ i y) univ = (Φ.blocks i).erase x := by
+    intro i; ext y
+    constructor
+    · intro hy
+      simp only [mem_filter, mem_univ, true_and] at hy
+      exact mem_erase.mpr ⟨Ne.symm hy.1, hy.2⟩
+    · intro hy
+      simp only [mem_filter, mem_univ, true_and]
+      rw [mem_erase] at hy
+      exact ⟨Ne.symm hy.1, hy.2⟩
+  have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = Φ.k - 1 := by
+    intro i hi
+    rw [this, ←Φ.hA i, card_erase_of_mem hi]
+  have count₂ := card_dependent P₂ Q₂ aux₂
+  have card_swap : #(filter (fun (y, i) ↦ P₁ y ∧ Q₁ y i) univ)
+      = #(filter (fun (i, y) ↦ P₂ i ∧ Q₂ i y) univ) := by
+    apply Finset.card_bij (fun (i, y) _ ↦ (y, i))
+    · intro ⟨y, i⟩ hyi
+      simp only [mem_filter, mem_univ, true_and] at hyi ⊢
+      exact and_left_comm.mp hyi
+    · intro ⟨y₁, i₁⟩ hyi₁ ⟨y₂, i₂⟩ hyi₂
+      simp only [mem_filter, mem_univ, true_and] at hyi₁ hyi₂
+      simp only [Prod.mk.injEq, and_imp]
+      exact fun hi hy ↦ ⟨hy, hi⟩
+    · intro ⟨i, y⟩ hiy
+      simp only [mem_filter, mem_univ, true_and] at hiy
+      use (y, i)
+      simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
+      exact and_left_comm.mp hiy
+  have : #(filter P₁ univ) = Φ.v - 1 := by
+    rw [filter_ne _ _, ←Φ.hX]
+    simp only [mem_univ, card_erase_of_mem, card_univ]
+  rwa [card_swap, count₂, this] at count₁
