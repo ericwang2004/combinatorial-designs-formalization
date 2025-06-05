@@ -1,9 +1,10 @@
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Card
+import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Multiset.Basic
 
 open Finset
 
@@ -23,21 +24,48 @@ structure BIBD (X : Type*) [Fintype X] [DecidableEq X] extends Design X where
   hA : ∀ i : Fin b, #(blocks i) = k
   balance : ∀ x y : X, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
 
-variable {X : Type*} [Fintype X] [DecidableEq X] {Φ : BIBD X} [Fintype (X × Fin Φ.b)] [Fintype (Fin Φ.b × X)]
+variable {X : Type*} [Fintype X] [DecidableEq X] {Φ : BIBD X}
 
 def rep (Φ : BIBD X) (x : X) := #{i | x ∈ Φ.blocks i}
 
-#check Finset.equivFin
-theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β] [Fintype (α × β)]
+theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     (P : α → Prop) [DecidablePred P]
     (Q : α → β → Prop) [∀ x, DecidablePred (Q x)]
     {k : ℕ} (hk : ∀ x, P x → #{y | Q x y} = k) :
     #{(x, y) | P x ∧ Q x y} = k * #{x | P x} := by
-  sorry
+  let g x (hx : P x) : { y // Q x y } ≃ Fin k := by
+    rw [←hk x hx]
+    apply Fintype.equivFinOfCardEq
+    apply Fintype.card_of_subtype
+    intro y
+    simp only [mem_filter, mem_univ, true_and]
+  let J : Finset (Fin k × α) := Finset.product univ {x | P x}
+  have sizeJ : #J = k * #{x | P x} := by calc
+    _ = _ := by apply Finset.card_product
+    _ = _ := by rw [card_fin k]
+  rw [←sizeJ]
+  apply Finset.card_bij (fun (x, y) hxy ↦ by
+    simp only [mem_filter, mem_univ, true_and] at hxy
+    exact (g x hxy.1 ⟨y, hxy.2⟩, x)
+  )
+  · intro ⟨x, y⟩ hxy
+    simp only [mem_filter, mem_univ, true_and] at hxy
+    exact mem_product.mpr ⟨by apply mem_univ,
+      by simp only [mem_filter, mem_univ, true_and]; exact hxy.1⟩
+  · intro ⟨x₁, y₁⟩ hxy₁ ⟨x₂, y₂⟩ hxy₂
+    simp only [mem_filter, mem_univ, true_and] at hxy₁ hxy₂
+    simp only [Prod.mk.injEq, and_imp]
+    exact fun hg xeq ↦
+      ⟨xeq, by subst xeq; simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq]⟩
+  · intro ⟨i, x⟩ hJ
+    have hx : P x := (mem_filter.mp (mem_product.mp hJ).2).2
+    use (x, (g x hx).symm i)
+    simp only [Subtype.coe_eta, Equiv.apply_symm_apply, mem_filter, mem_univ, true_and, exists_prop,
+      and_true]
+    exact ⟨hx, ((g x hx).symm i).property⟩
 
 theorem rep_constant : ∀ x : X, (Φ.k - 1) * rep Φ x = Φ.l * (Φ.v - 1) := by
   intro x
-  let I : Finset (X × Fin Φ.b) := {(y, i) : X × Fin Φ.b | x ≠ y ∧ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i}
   let P₁ : X → Prop := fun y ↦ x ≠ y
   let Q₁ : X → Fin Φ.b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
   have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = Φ.l := Φ.balance x
