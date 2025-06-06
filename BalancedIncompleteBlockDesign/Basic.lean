@@ -8,7 +8,7 @@ import Mathlib.Data.Fintype.Card
 
 open Finset
 
-namespace CombinatorialDesign
+namespace BalancedIncompleteBlockDesign
 
 structure Design (X : Type*) where
   mk ::
@@ -135,4 +135,4 @@ theorem blocks_constant : ∀ x, k * Φ.b = rep Φ x * v := by
   have : #(filter P₁ univ) = v := by simp only [filter_True, filter_univ_mem, P₁]; exact Φ.hX
   rwa [this] at count₁
 
-end CombinatorialDesign
+end BalancedIncompleteBlockDesign

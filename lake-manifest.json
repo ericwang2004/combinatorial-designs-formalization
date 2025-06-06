@@ -92,5 +92,5 @@
    "inputRev": "main",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "steinberg",
+ "name": "combinatorialdesigns",
  "lakeDir": ".lake"}
