@@ -8,25 +8,24 @@ import Mathlib.Data.Fintype.Card
 
 open Finset
 
+namespace CombinatorialDesign
+
 structure Design (X : Type*) where
   mk ::
   b : ℕ
   blocks : Fin b → Finset X
 
-structure BIBD (X : Type*) [Fintype X] [DecidableEq X] extends Design X where
+structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
+    (v k l : ℕ) extends Design X where
   mk ::
-  v : ℕ
-  k : ℕ
-  l : ℕ
-  r : ℕ
   hvk : v > k ∧ k ≥ 2
   hX : Fintype.card X = v
   hA : ∀ i : Fin b, #(blocks i) = k
   balance : ∀ x y : X, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
 
-variable {X : Type*} [Fintype X] [DecidableEq X] {Φ : BIBD X}
+variable {X : Type*} [Fintype X] [DecidableEq X] {v k l : ℕ} (Φ : BIBD X v k l)
 
-def rep (Φ : BIBD X) (x : X) := #{i | x ∈ Φ.blocks i}
+def rep (x : X) := #{i | x ∈ Φ.blocks i}
 
 theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     (P : α → Prop) [DecidablePred P]
@@ -44,7 +43,7 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     _ = _ := by apply Finset.card_product
     _ = _ := by rw [card_fin k]
   rw [←sizeJ]
-  apply Finset.card_bij (fun (x, y) hxy ↦ by
+  apply card_bij (fun (x, y) hxy ↦ by
     simp only [mem_filter, mem_univ, true_and] at hxy
     exact (g x hxy.1 ⟨y, hxy.2⟩, x)
   )
@@ -64,11 +63,30 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
       and_true]
     exact ⟨hx, ((g x hx).symm i).property⟩
 
-theorem rep_constant : ∀ x : X, (Φ.k - 1) * rep Φ x = Φ.l * (Φ.v - 1) := by
+theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
+    {P : α → β → Prop} [∀ x, DecidablePred (P x)]
+    {Q : β → α → Prop} [∀ y, DecidablePred (Q y)]
+    (hPQ : ∀ x y, P x y ↔ Q y x) :
+    #{(x, y) | P x y} = #{(y, x) | Q y x} := by
+  apply card_bij (fun (x, y) _ ↦ (y, x))
+  · intro ⟨x, y⟩ hxy
+    simp only [mem_filter, mem_univ, true_and] at hxy ⊢
+    exact (hPQ _ _).1 hxy
+  · intro ⟨x₁, y₁⟩ hxy₁ ⟨x₂, y₂⟩ hxy₂
+    simp only [mem_filter, mem_univ, true_and] at hxy₁ hxy₂
+    simp only [Prod.mk.injEq, and_imp]
+    exact fun hy hx ↦ ⟨hx, hy⟩
+  · intro ⟨x, y⟩ hxy
+    simp only [mem_filter, mem_univ, true_and] at hxy
+    use ⟨y, x⟩
+    simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
+    exact (hPQ _ _).2 hxy
+
+theorem rep_constant : ∀ x, (k - 1) * rep Φ x = l * (v - 1) := by
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
   let Q₁ : X → Fin Φ.b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
-  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = Φ.l := Φ.balance x
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := Φ.balance x
   have count₁ := card_dependent P₁ Q₁ aux₁
   let P₂ : Fin Φ.b → Prop := fun i ↦ x ∈ Φ.blocks i
   let Q₂ : Fin Φ.b → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
@@ -82,26 +100,39 @@ theorem rep_constant : ∀ x : X, (Φ.k - 1) * rep Φ x = Φ.l * (Φ.v - 1) := b
       simp only [mem_filter, mem_univ, true_and]
       rw [mem_erase] at hy
       exact ⟨Ne.symm hy.1, hy.2⟩
-  have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = Φ.k - 1 := by
+  have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k - 1 := by
     intro i hi
-    rw [this, ←Φ.hA i, card_erase_of_mem hi]
+    rw [this, card_erase_of_mem hi, Φ.hA i]
   have count₂ := card_dependent P₂ Q₂ aux₂
-  have card_swap : #(filter (fun (y, i) ↦ P₁ y ∧ Q₁ y i) univ)
-      = #(filter (fun (i, y) ↦ P₂ i ∧ Q₂ i y) univ) := by
-    apply Finset.card_bij (fun (i, y) _ ↦ (y, i))
-    · intro ⟨y, i⟩ hyi
-      simp only [mem_filter, mem_univ, true_and] at hyi ⊢
-      exact and_left_comm.mp hyi
-    · intro ⟨y₁, i₁⟩ hyi₁ ⟨y₂, i₂⟩ hyi₂
-      simp only [mem_filter, mem_univ, true_and] at hyi₁ hyi₂
-      simp only [Prod.mk.injEq, and_imp]
-      exact fun hi hy ↦ ⟨hy, hi⟩
-    · intro ⟨i, y⟩ hiy
-      simp only [mem_filter, mem_univ, true_and] at hiy
-      use (y, i)
-      simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
-      exact and_left_comm.mp hiy
-  have : #(filter P₁ univ) = Φ.v - 1 := by
+  have : #(filter P₁ univ) = v - 1 := by
     rw [filter_ne _ _, ←Φ.hX]
     simp only [mem_univ, card_erase_of_mem, card_univ]
-  rwa [card_swap, count₂, this] at count₁
+  have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
+  rwa [card_of_swap swap_condition, count₂, this] at count₁
+
+theorem rep_eq_rep : ∀ x y, rep Φ x = rep Φ y := by
+  intro x y
+  have h := rep_constant Φ x
+  rw [←rep_constant Φ y] at h
+  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
+
+theorem blocks_constant : ∀ x, k * Φ.b = rep Φ x * v := by
+  intro x
+  let P₁ : X → Prop := fun _ ↦ True
+  let Q₁ : X → Fin Φ.b → Prop := fun x i ↦ x ∈ Φ.blocks i
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = rep Φ x :=
+    fun y _ ↦ by rw [rep_eq_rep Φ x y]; rfl
+  have count₁ := card_dependent P₁ Q₁ aux₁
+  let P₂ : Fin Φ.b → Prop := fun _ ↦ True
+  let Q₂ : Fin Φ.b → X → Prop := fun i x ↦ x ∈ Φ.blocks i
+  have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k :=
+    fun i _ ↦ by simp only [filter_univ_mem, Q₂]; exact Φ.hA i
+  have count₂ := card_dependent P₂ Q₂ aux₂
+  have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
+  rw [card_of_swap swap_condition, count₂] at count₁
+  have : #(filter P₂ univ) = Φ.b := by rw [filter_True, card_univ, Fintype.card_fin]
+  rw [this] at count₁
+  have : #(filter P₁ univ) = v := by simp only [filter_True, filter_univ_mem, P₁]; exact Φ.hX
+  rwa [this] at count₁
+
+end CombinatorialDesign
