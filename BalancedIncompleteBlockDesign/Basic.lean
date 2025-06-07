@@ -10,20 +10,19 @@ open Finset
 
 namespace BalancedIncompleteBlockDesign
 
-structure Design (X : Type*) where
+structure Design (X : Type*) [Fintype X] (b : ℕ) where
   mk ::
-  b : ℕ
   blocks : Fin b → Finset X
 
 structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
-    (v k l : ℕ) extends Design X where
+    (v b k l : ℕ) extends Design X b where
   mk ::
   hvk : v > k ∧ k ≥ 2
   hX : Fintype.card X = v
   hA : ∀ i : Fin b, #(blocks i) = k
   balance : ∀ x y : X, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
 
-variable {X : Type*} [Fintype X] [DecidableEq X] {v k l : ℕ} (Φ : BIBD X v k l)
+variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
 def rep (x : X) := #{i | x ∈ Φ.blocks i}
 
@@ -85,11 +84,11 @@ theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
 theorem rep_constant : ∀ x, (k - 1) * rep Φ x = l * (v - 1) := by
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
-  let Q₁ : X → Fin Φ.b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
+  let Q₁ : X → Fin b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
   have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := Φ.balance x
   have count₁ := card_dependent P₁ Q₁ aux₁
-  let P₂ : Fin Φ.b → Prop := fun i ↦ x ∈ Φ.blocks i
-  let Q₂ : Fin Φ.b → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
+  let P₂ : Fin b → Prop := fun i ↦ x ∈ Φ.blocks i
+  let Q₂ : Fin b → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
   have : ∀ i, filter (fun y ↦ Q₂ i y) univ = (Φ.blocks i).erase x := by
     intro i; ext y
     constructor
@@ -116,21 +115,21 @@ theorem rep_eq_rep : ∀ x y, rep Φ x = rep Φ y := by
   rw [←rep_constant Φ y] at h
   exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
 
-theorem blocks_constant : ∀ x, k * Φ.b = rep Φ x * v := by
+theorem blocks_constant : ∀ x, k * b = rep Φ x * v := by
   intro x
   let P₁ : X → Prop := fun _ ↦ True
-  let Q₁ : X → Fin Φ.b → Prop := fun x i ↦ x ∈ Φ.blocks i
+  let Q₁ : X → Fin b → Prop := fun x i ↦ x ∈ Φ.blocks i
   have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = rep Φ x :=
     fun y _ ↦ by rw [rep_eq_rep Φ x y]; rfl
   have count₁ := card_dependent P₁ Q₁ aux₁
-  let P₂ : Fin Φ.b → Prop := fun _ ↦ True
-  let Q₂ : Fin Φ.b → X → Prop := fun i x ↦ x ∈ Φ.blocks i
+  let P₂ : Fin b → Prop := fun _ ↦ True
+  let Q₂ : Fin b → X → Prop := fun i x ↦ x ∈ Φ.blocks i
   have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k :=
     fun i _ ↦ by simp only [filter_univ_mem, Q₂]; exact Φ.hA i
   have count₂ := card_dependent P₂ Q₂ aux₂
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rw [card_of_swap swap_condition, count₂] at count₁
-  have : #(filter P₂ univ) = Φ.b := by rw [filter_True, card_univ, Fintype.card_fin]
+  have : #(filter P₂ univ) = b := by rw [filter_True, card_univ, Fintype.card_fin]
   rw [this] at count₁
   have : #(filter P₁ univ) = v := by simp only [filter_True, filter_univ_mem, P₁]; exact Φ.hX
   rwa [this] at count₁

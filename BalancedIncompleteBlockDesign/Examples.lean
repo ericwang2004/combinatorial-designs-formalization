@@ -5,8 +5,7 @@ import Mathlib.Tactic.FinCases
 open BalancedIncompleteBlockDesign
 open Finset
 
-def fano_plane : BIBD (Fin 7) 7 3 1 := {
-  b := 7
+def fanoPlane : BIBD (Fin 7) 7 7 3 1 := {
   blocks := fun i ↦ match i with
     | 0 => {0, 1, 2}
     | 1 => {2, 4, 5}
