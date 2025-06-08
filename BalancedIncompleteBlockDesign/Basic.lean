@@ -14,13 +14,23 @@ structure Design (X : Type*) [Fintype X] (b : ℕ) where
   mk ::
   blocks : Fin b → Finset X
 
+/-- Balanced Block Design -/
+structure BBD (X : Type*) [Fintype X] [DecidableEq X] (v b l : ℕ) extends Design X b where
+  mk ::
+  hX : Fintype.card X = v
+  balance : ∀ x y, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
+
+/-- Regular Pairwise Balanced Design -/
+structure RPBD (X : Type*) [Fintype X] [DecidableEq X] (v b l r : ℕ) extends BBD X v b l where
+  mk ::
+  regularity : ∀ x, #{i | x ∈ blocks i} = r
+
+/-- Balanced Incomplete Block Design -/
 structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
-    (v b k l : ℕ) extends Design X b where
+    (v b k l : ℕ) extends BBD X v b l where
   mk ::
   hvk : v > k ∧ k ≥ 2
-  hX : Fintype.card X = v
   hA : ∀ i : Fin b, #(blocks i) = k
-  balance : ∀ x y : X, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
@@ -114,6 +124,11 @@ theorem rep_eq_rep : ∀ x y, rep Φ x = rep Φ y := by
   have h := rep_constant Φ x
   rw [←rep_constant Φ y] at h
   exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
+
+theorem div_of_bibd [Inhabited X] (Φ : BIBD X v b k l) : k - 1 ∣ l * (v - 1) := by
+  let x : X := Classical.choice instNonemptyOfInhabited
+  use rep Φ x
+  exact (rep_constant Φ x).symm
 
 theorem blocks_constant : ∀ x, k * b = rep Φ x * v := by
   intro x
