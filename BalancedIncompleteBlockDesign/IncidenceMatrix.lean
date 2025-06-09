@@ -18,6 +18,29 @@ def fromIncMat (M : Matrix X (Fin b) α) : Design X b := {
 noncomputable def dual (Φ : Design X b) : Design (Fin b) (Fintype.card X) :=
   fromIncMat α (reindex (Equiv.refl (Fin b)) (equivFin X) (toIncMat α Φ)ᵀ)
 
+theorem properties_of_dual [Inhabited X] : let Ψ := dual α Φ.toDesign
+    (∀ i, #(Ψ.blocks i) = rep Φ) ∧
+    (∀ y, #{i | y ∈ Ψ.blocks i} = k) ∧
+    (∀ i j, i ≠ j → #(Ψ.blocks i ∩ Ψ.blocks j) = l) := by
+  simp only [reindex_apply, Equiv.refl_symm, Equiv.coe_refl, submatrix_apply, id_eq,
+    transpose_apply, of_apply, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not,
+    mem_filter, mem_univ, true_and, ne_eq, dual, fromIncMat, toIncMat]
+  constructor
+  · intro i
+    rw [←rep_eq_rep_elem _ ((Fintype.equivFin X).symm i), rep_elem]
+  · constructor
+    · intro y
+      have : #{i | i ∈ Φ.blocks y} = #{i | (Fintype.equivFin X).symm i ∈ Φ.blocks y} :=
+        card_bijective (Fintype.equivFin X)
+          (Equiv.bijective _)
+          (fun i ↦ by simp only [filter_univ_mem, mem_filter, mem_univ,
+            Equiv.symm_apply_apply, true_and])
+      rw [←this, filter_univ_mem, Φ.hA]
+    · intro i j hij
+      rw [filter_inter, univ_inter, filter_filter, Φ.balance]
+      simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
+      exact fun a ↦ hij a.symm
+
 def allOnes (m n : Type*) : Matrix m n α :=
   of (fun _ _ ↦ 1)
 
@@ -53,7 +76,7 @@ theorem rpbdCondition_of_rpbd : rpbdCondition α l r (toIncMat _ Ψ.toDesign) :=
         (fun _ ↦ Eq.symm (ite_and _ _ _ _)), sum_boole, Ψ.balance _ _ (Ne.symm hxy)]
 
 theorem bibdCondition_of_bibd : ∀ i,
-    bibdCondition α k l (rep Φ i) (toIncMat _ Φ.toDesign) := by
+    bibdCondition α k l (rep_elem Φ i) (toIncMat _ Φ.toDesign) := by
   intro i
   constructor
   · simp_all only [Nat.cast_lt, Φ.hvk, Φ.hX, Nat.ofNat_le_cast, and_self]

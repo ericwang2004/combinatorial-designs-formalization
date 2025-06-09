@@ -34,7 +34,7 @@ structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
-def rep (x : X) := #{i | x ∈ Φ.blocks i}
+def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
 theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     (P : α → Prop) [DecidablePred P]
@@ -91,7 +91,7 @@ theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
     exact (hPQ _ _).2 hxy
 
-theorem rep_constant : ∀ x, (k - 1) * rep Φ x = l * (v - 1) := by
+theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * (v - 1) := by
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
   let Q₁ : X → Fin b → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
@@ -119,23 +119,31 @@ theorem rep_constant : ∀ x, (k - 1) * rep Φ x = l * (v - 1) := by
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
-theorem rep_eq_rep : ∀ x y, rep Φ x = rep Φ y := by
+noncomputable def rep [Inhabited X] (Φ : BIBD X v b k l) : ℕ := by
+  let x : X := Classical.choice instNonemptyOfInhabited
+  exact rep_elem Φ x
+
+theorem rep_property [Inhabited X] (Φ : BIBD X v b k l) : (k - 1) * rep Φ =  l * (v - 1) := by
+  rw [rep, rep_constant]
+
+theorem rep_eq_rep_elem [Inhabited X] : ∀ x, rep_elem Φ x = rep Φ := by
+  intro x
+  have h := rep_constant Φ x
+  rw [←rep_property Φ] at h
+  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
+
+theorem rep_elem_eq_rep_elem : ∀ x y, rep_elem Φ x = rep_elem Φ y := by
   intro x y
   have h := rep_constant Φ x
   rw [←rep_constant Φ y] at h
   exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
 
-theorem div_of_bibd [Inhabited X] (Φ : BIBD X v b k l) : k - 1 ∣ l * (v - 1) := by
-  let x : X := Classical.choice instNonemptyOfInhabited
-  use rep Φ x
-  exact (rep_constant Φ x).symm
-
-theorem blocks_constant : ∀ x, k * b = rep Φ x * v := by
+theorem blocks_constant : ∀ x, k * b = rep_elem Φ x * v := by
   intro x
   let P₁ : X → Prop := fun _ ↦ True
   let Q₁ : X → Fin b → Prop := fun x i ↦ x ∈ Φ.blocks i
-  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = rep Φ x :=
-    fun y _ ↦ by rw [rep_eq_rep Φ x y]; rfl
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = rep_elem Φ x :=
+    fun y _ ↦ by rw [rep_elem_eq_rep_elem]; rfl
   have count₁ := card_dependent P₁ Q₁ aux₁
   let P₂ : Fin b → Prop := fun _ ↦ True
   let Q₂ : Fin b → X → Prop := fun i x ↦ x ∈ Φ.blocks i
