@@ -157,4 +157,17 @@ theorem blocks_constant : ∀ x, k * b = rep_elem Φ x * v := by
   have : #(filter P₁ univ) = v := by simp only [filter_True, filter_univ_mem, P₁]; exact Φ.hX
   rwa [this] at count₁
 
+/-- Useful coercions --/
+def BBD_to_Design : (BBD X v b l) → (Design X b) := BBD.toDesign
+def RPBD_to_BBD : (r : ℕ) → (RPBD X v b l r) → (BBD X v b l) := (fun _ => RPBD.toBBD)
+def RPBD_to_Design : (r : ℕ) → (RPBD X v b l r) → (Design X b) :=
+  (fun r => BBD_to_Design ∘ (RPBD_to_BBD r))
+def BIBD_to_BBD : (BIBD X v b k l) → (BBD X v b l) := BIBD.toBBD
+def BIBD_to_Design : (BIBD X v b k l) → (Design X b) := BBD.toDesign ∘ BIBD.toBBD
+def BIBD_to_RPBD :
+    [Inhabited X] → (Φ : BIBD X v b k l) → (RPBD X v b l (rep Φ)) := by
+  intro P Φ
+  constructor
+  . exact (rep_eq_rep_elem Φ)
+
 end BalancedIncompleteBlockDesign
