@@ -1,6 +1,5 @@
 import BalancedIncompleteBlockDesign.Basic
 import Mathlib.Data.Matrix.Basic
-import Mathlib.Tactic.Ring
 
 open BalancedIncompleteBlockDesign Matrix Finset Fintype
 namespace BalancedIncompleteBlockDesign
