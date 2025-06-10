@@ -74,17 +74,15 @@ theorem rpbdCondition_of_rpbd : rpbdCondition α l r (toIncMat _ Ψ.toDesign) :=
       rw [sum_congr _ (fun i ↦ if y ∈ Ψ.blocks i ∧ x ∈ Ψ.blocks i then 1 else 0)
         (fun _ ↦ Eq.symm (ite_and _ _ _ _)), sum_boole, Ψ.balance _ _ (Ne.symm hxy)]
 
-theorem bibdCondition_of_bibd : ∀ i,
-    bibdCondition α k l (rep_elem Φ i) (toIncMat _ Φ.toDesign) := by
-  intro i
+theorem bibdCondition_of_bibd [Inhabited X] :
+    bibdCondition α k l (rep Φ) (toIncMat _ Φ.toDesign) := by
   constructor
   · simp_all only [Nat.cast_lt, Φ.hvk, Φ.hX, Nat.ofNat_le_cast, and_self]
   · constructor
     · ext i j
       simp only [toIncMat, allOnes, mul_apply, of_apply, smul_apply, one_mul,
         Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.hA, smul_eq_mul]
-    · -- ## FIGURE OUT THE BEST WAY TO AVOID COPYING CODE
-      sorry
+    · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ))
 
 def bbd_of_rpbdCondition {M : Matrix X (Fin b) α} (l r : ℕ) (hM : rpbdCondition α l r M) :
     BBD X (Fintype.card X) b l := {
