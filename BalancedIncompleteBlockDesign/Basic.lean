@@ -53,7 +53,7 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     _ = _ := by rw [card_fin k]
   rw [←sizeJ]
   apply card_bij (fun (x, y) hxy ↦ by
-    simp only [mem_filter, mem_univ, true_and] at hxy
+    simp at hxy
     exact (g x hxy.1 ⟨y, hxy.2⟩, x)
   )
   · intro ⟨x, y⟩ hxy
@@ -158,12 +158,23 @@ theorem blocks_constant : ∀ x, k * b = rep_elem Φ x * v := by
   rwa [this] at count₁
 
 /-- Useful coercions --/
+--A BBD is also a Design
 def BBD_to_Design : (BBD X v b l) → (Design X b) := BBD.toDesign
+
+--A RPBD is also a BBD
 def RPBD_to_BBD : (r : ℕ) → (RPBD X v b l r) → (BBD X v b l) := (fun _ => RPBD.toBBD)
+
+--Thus, a RPBD is also a Design
 def RPBD_to_Design : (r : ℕ) → (RPBD X v b l r) → (Design X b) :=
   (fun r => BBD_to_Design ∘ (RPBD_to_BBD r))
+
+--A BIBD is also a BBD
 def BIBD_to_BBD : (BIBD X v b k l) → (BBD X v b l) := BIBD.toBBD
+
+--A BIBD is also a Design
 def BIBD_to_Design : (BIBD X v b k l) → (Design X b) := BBD.toDesign ∘ BIBD.toBBD
+
+--A BIBD is also an RPBD
 def BIBD_to_RPBD :
     [Inhabited X] → (Φ : BIBD X v b k l) → (RPBD X v b l (rep Φ)) := by
   intro P Φ

@@ -11,8 +11,7 @@ def toIncMat (Φ : Design X b) : Matrix X (Fin b) α :=
   of (fun x i ↦ if x ∈ Φ.blocks i then 1 else 0)
 
 def fromIncMat (M : Matrix X (Fin b) α) : Design X b := {
-  blocks := fun i ↦ {x | M x i = 1}
-}
+  blocks := fun i ↦ {x | M x i = 1}}
 
 noncomputable def dual (Φ : Design X b) : Design (Fin b) (Fintype.card X) :=
   fromIncMat α (reindex (Equiv.refl (Fin b)) (equivFin X) (toIncMat α Φ)ᵀ)
