@@ -45,7 +45,8 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     rw [←hk x hx]
     apply Fintype.equivFinOfCardEq
     apply Fintype.card_of_subtype
-    simp
+    intro y
+    simp only [mem_filter, mem_univ, true_and]
   let J : Finset (Fin k × α) := Finset.product univ {x | P x}
   have sizeJ : #J = k * #{x | P x} := by calc
     _ = _ := by apply Finset.card_product
@@ -56,16 +57,19 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     exact (g x hxy.1 ⟨y, hxy.2⟩, x)
   )
   · intro ⟨x, y⟩ hxy
-    simp at hxy
-    exact mem_product.mpr ⟨by apply mem_univ, by simp ; exact hxy.1⟩
+    simp only [mem_filter, mem_univ, true_and] at hxy
+    exact mem_product.mpr ⟨by apply mem_univ,
+      by simp only [mem_filter, mem_univ, true_and]; exact hxy.1⟩
   · intro ⟨x₁, y₁⟩ hxy₁ ⟨x₂, y₂⟩ hxy₂
-    simp at hxy₁ hxy₂
-    simp
-    exact fun hg xeq ↦ ⟨xeq, by subst xeq; simp_all⟩
+    simp only [mem_filter, mem_univ, true_and] at hxy₁ hxy₂
+    simp only [Prod.mk.injEq, and_imp]
+    exact fun hg xeq ↦
+      ⟨xeq, by subst xeq; simp_all only [EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq]⟩
   · intro ⟨i, x⟩ hJ
     have hx : P x := (mem_filter.mp (mem_product.mp hJ).2).2
     use (x, (g x hx).symm i)
-    simp
+    simp only [Subtype.coe_eta, Equiv.apply_symm_apply, mem_filter, mem_univ, true_and, exists_prop,
+      and_true]
     exact ⟨hx, ((g x hx).symm i).property⟩
 
 theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
@@ -75,16 +79,16 @@ theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     #{(x, y) | P x y} = #{(y, x) | Q y x} := by
   apply card_bij (fun (x, y) _ ↦ (y, x))
   · intro ⟨x, y⟩ hxy
-    simp at hxy ⊢
+    simp only [mem_filter, mem_univ, true_and] at hxy ⊢
     exact (hPQ _ _).1 hxy
   · intro ⟨x₁, y₁⟩ hxy₁ ⟨x₂, y₂⟩ hxy₂
-    simp at hxy₁ hxy₂
-    simp
+    simp only [mem_filter, mem_univ, true_and] at hxy₁ hxy₂
+    simp only [Prod.mk.injEq, and_imp]
     exact fun hy hx ↦ ⟨hx, hy⟩
   · intro ⟨x, y⟩ hxy
-    simp at hxy
+    simp only [mem_filter, mem_univ, true_and] at hxy
     use ⟨y, x⟩
-    simp
+    simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
     exact (hPQ _ _).2 hxy
 
 theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * (v - 1) := by
@@ -99,10 +103,11 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * (v - 1) := by
     intro i; ext y
     constructor
     · intro hy
-      simp at hy
+      simp only [mem_filter, mem_univ, true_and] at hy
       exact mem_erase.mpr ⟨Ne.symm hy.1, hy.2⟩
     · intro hy
-      simp [mem_filter, mem_univ, true_and, mem_erase] at hy ⊢
+      simp only [mem_filter, mem_univ, true_and]
+      rw [mem_erase] at hy
       exact ⟨Ne.symm hy.1, hy.2⟩
   have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k - 1 := by
     intro i hi
@@ -110,7 +115,7 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * (v - 1) := by
   have count₂ := card_dependent P₂ Q₂ aux₂
   have : #(filter P₁ univ) = v - 1 := by
     rw [filter_ne _ _, ←Φ.hX]
-    simp
+    simp only [mem_univ, card_erase_of_mem, card_univ]
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
