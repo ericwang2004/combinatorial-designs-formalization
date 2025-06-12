@@ -26,40 +26,17 @@ def sum (Φ₁ : BIBD X v b₁ k l₁) (Φ₂ : BIBD X v b₂ k l₂) :
 }
 
 def complement [Inhabited X] (Φ : BIBD X v b k l) (hyp : v - k ≥ 2) :
-    BIBD X v b (v - k) (b - 2 * rep Φ + l) := {
+    BIBD X v b (v - k) (b - (2 * rep Φ - l)) := {
   blocks := (Φ.blocks ·)ᶜ
   hX := Φ.hX
   hvk := ⟨by have := Φ.hvk; norm_num; constructor <;> linarith, hyp⟩
   hA i := by simp only [Pi.compl_apply]; rw [card_compl, Φ.hX, Φ.hA i]
   balance x y hxy := by
     simp only [Pi.compl_apply, mem_compl]
-    let S₁ : Finset (Fin b) := {i | x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i}
-    let S₂ : Finset (Fin b) := {i | x ∈ Φ.blocks i ∧ y ∉ Φ.blocks i}
-    let S₃ : Finset (Fin b) := {i | x ∉ Φ.blocks i ∧ y ∈ Φ.blocks i}
-    let S₄ : Finset (Fin b) := {i | x ∉ Φ.blocks i ∧ y ∉ Φ.blocks i}
-    have union₁₂ : S₁ ∪ S₂ = {i | x ∈ Φ.blocks i} := by
-      ext i
-      constructor
-      · intro hi
-        simp only [coe_union, coe_filter, mem_univ, true_and,
-          Set.mem_union, Set.mem_setOf_eq, S₁, S₂] at hi
-        simp only [Set.mem_setOf_eq]
-        cases hi with
-        | inl h => exact h.1
-        | inr h => exact h.1
-      · intro hi
-        simp only [coe_union, Set.mem_union, mem_coe]
-        simp only [Set.mem_setOf_eq] at hi
-        by_cases hy : y ∈ Φ.blocks i
-        · left
-          simp only [S₁, mem_filter, mem_univ, true_and]
-          exact ⟨hi, hy⟩
-        · right
-          simp only [S₂, mem_filter, mem_univ, true_and]
-          exact ⟨hi, hy⟩
-    sorry
-
+    rw [@filter_and_not, @filter_not, @sdiff_sdiff_left, @card_univ_diff]
+    simp only [Fintype.card_fin, sup_eq_union]
+    rw [@card_union, ← rep_elem, ← rep_elem, rep_eq_rep_elem, rep_eq_rep_elem,
+      ← @filter_and, Φ.balance x y hxy, ← Nat.two_mul]
 }
-
 
 end BalancedIncompleteBlockDesign
