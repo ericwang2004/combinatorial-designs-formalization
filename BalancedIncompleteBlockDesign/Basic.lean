@@ -25,6 +25,11 @@ structure RPBD (X : Type*) [Fintype X] [DecidableEq X] (v b l r : ℕ) extends B
   mk ::
   regularity : ∀ x, #{i | x ∈ blocks i} = r
 
+structure nontrivialRPBD (X : Type*) [Fintype X] [DecidableEq X] (v b l r : ℕ)
+    extends RPBD X v b l r where
+  mk ::
+  nontrivial : ∃ i, 0 < #(blocks i) ∧ #(blocks i) < v
+
 /-- Balanced Incomplete Block Design -/
 structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
     (v b k l : ℕ) extends BBD X v b l where
@@ -53,7 +58,7 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
     _ = _ := by rw [card_fin k]
   rw [←sizeJ]
   apply card_bij (fun (x, y) hxy ↦ by
-    simp at hxy
+    simp only [mem_filter, mem_univ, true_and] at hxy
     exact (g x hxy.1 ⟨y, hxy.2⟩, x)
   )
   · intro ⟨x, y⟩ hxy

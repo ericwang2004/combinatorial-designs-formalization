@@ -39,7 +39,7 @@ theorem properties_of_dual [Inhabited X] : let Ψ := dual α Φ.toDesign
       simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
       exact fun a ↦ hij a.symm
 
-def allOnes (m n : Type*) : Matrix m n α :=
+def allOnes (m n : Type*) (α : Type*) [One α] : Matrix m n α :=
   of (fun _ _ ↦ 1)
 
 def isZeroOne (M : Matrix m n α) : Prop :=
@@ -51,7 +51,7 @@ def rpbdCondition [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
 
 def bibdCondition [DecidableEq m] (k l r : α) (M : Matrix m n α) : Prop :=
   (Fintype.card m > k ∧ k ≥ 2) ∧
-  (allOnes _ _ _) * M = k • (allOnes _ (Fin 1) _) ∧
+  (allOnes _ _ α) * M = k • (allOnes (Fin 1) _ α) ∧
   rpbdCondition α l r M
 
 variable {α} {r : ℕ} (Ψ : RPBD X v b l r)

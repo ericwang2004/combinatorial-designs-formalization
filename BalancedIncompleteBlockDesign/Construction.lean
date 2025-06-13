@@ -33,10 +33,10 @@ def complement [Inhabited X] (Φ : BIBD X v b k l) (hyp : v - k ≥ 2) :
   hA i := by simp only [Pi.compl_apply]; rw [card_compl, Φ.hX, Φ.hA i]
   balance x y hxy := by
     simp only [Pi.compl_apply, mem_compl]
-    rw [@filter_and_not, @filter_not, @sdiff_sdiff_left, @card_univ_diff]
+    rw [filter_and_not, filter_not, sdiff_sdiff_left, card_univ_diff]
     simp only [Fintype.card_fin, sup_eq_union]
-    rw [@card_union, ← rep_elem, ← rep_elem, rep_eq_rep_elem, rep_eq_rep_elem,
-      ← @filter_and, Φ.balance x y hxy, ← Nat.two_mul]
+    rw [card_union, ←rep_elem, ←rep_elem, rep_eq_rep_elem, rep_eq_rep_elem,
+      ←filter_and, Φ.balance x y hxy, ←Nat.two_mul]
 }
 
 end BalancedIncompleteBlockDesign
