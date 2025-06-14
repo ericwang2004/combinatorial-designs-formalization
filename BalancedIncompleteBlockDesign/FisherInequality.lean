@@ -29,7 +29,20 @@ theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [Dec
       mul_one, Matrix.one_mul, Matrix.mul_one, Matrix.mul_neg, add_neg_cancel_right,
       zero_add, fromBlocks_inj, true_and]
     constructor
-    · sorry
+    · ext i j
+      have i_eq_zero := Fin.fin_one_eq_zero i
+      subst i_eq_zero
+      simp only [add_apply, mul_apply, neg_apply, zero_apply, Fin.isValue, univ_unique,
+        Fin.default_eq_zero, sum_singleton, one_apply_eq]
+      rw [Mathlib.Tactic.RingNF.add_neg, sub_eq_zero, add_mul, one_mul, Finset.sum_mul]
+      simp_rw [mul_add, ←mul_assoc]
+      rw [Finset.sum_add_distrib, add_comm]
+      congr
+      rw [Fintype.sum_eq_single j]
+      · simp only [one_apply, reduceIte, mul_one]
+      · intro b hb
+        simp only [one_apply, mul_ite, mul_one, mul_zero, ite_eq_right_iff]
+        exact fun hb' ↦ False.elim (hb hb')
     · rw [add_comm]
   calc
     det (1 + u * v) = det A * det B * det C := by rw [detA, detB, detC, one_mul, mul_one]
@@ -37,7 +50,7 @@ theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [Dec
     _ = det D := by rw [hABCD]
     _ = 1 + (v * u) 0 0 := by rw [detD]
 
-theorem foo {α n : Type*} [Field α]
+theorem rank_ones_add_diagonal {α n : Type*} [Field α]
     [Fintype n] [DecidableEq n] (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
     rank (a • allOnes n n α + b • 1) = Fintype.card n := by
   let u := allOnes n (Fin 1) α
@@ -61,7 +74,8 @@ theorem foo {α n : Type*} [Field α]
     _ = b ^ Fintype.card n * det (1 + (a / b) • (u * v)) := by rw [det_smul]
     _ = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by rw [det_expr]
     _ ≠ 0 := mul_ne_zero (pow_ne_zero _ hb) hab
-  sorry
+  apply rank_of_isUnit
+  rwa [isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
 
 theorem r_gt_l_of_nontrivialrpbd (Φ : nontrivialRPBD X v b l r) : r > l := by
   rcases Φ.nontrivial with ⟨i, hi₀, hi₁⟩
@@ -91,7 +105,7 @@ theorem b_ge_v_of_nontrivialrpbd {α : Type*} [LinearOrderedField α]
     rw [(rpbdCondition_of_rpbd (α := α) Φ.toRPBD).2, ←Nat.cast_sub,
       Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
     exact l_le_r
-  have aux := foo (α := α) (n := X) l (r - l)
+  have aux := rank_ones_add_diagonal (α := α) (n := X) l (r - l)
     (sub_ne_zero.mpr (ne_of_gt (Nat.cast_lt.mpr (r_gt_l_of_nontrivialrpbd Φ))))
     (mul_nonneg
       (div_nonneg (Nat.cast_nonneg l) (l_le_r |> Nat.cast_le.mpr |> sub_nonneg.mpr))
