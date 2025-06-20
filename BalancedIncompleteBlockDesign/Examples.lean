@@ -1,4 +1,5 @@
 import BalancedIncompleteBlockDesign.Basic
+import BalancedIncompleteBlockDesign.Isomorphism
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
 
@@ -21,7 +22,7 @@ open Finset
   https://en.wikipedia.org/wiki/Fano_plane#/media/File:Fano_plane.svg
 -/
 def fanoPlane : BIBD (Fin 7) 7 7 3 1 := {
-  blocks := fun i ↦ match i with
+  blocks i := match i with
     | 0 => {0, 1, 2}
     | 1 => {2, 4, 5}
     | 2 => {5, 6, 0}
@@ -31,6 +32,37 @@ def fanoPlane : BIBD (Fin 7) 7 7 3 1 := {
     | 6 => {1, 4, 6}
   hvk := by norm_num
   hX := rfl
-  hA := fun i ↦ by fin_cases i; all_goals decide
-  balance := fun x y _ ↦ by fin_cases x, y; all_goals trivial
+  hA i := by fin_cases i; all_goals trivial
+  balance x y _ := by fin_cases x, y; all_goals trivial
+}
+
+def fanoPlaneIso : DesignIsomorphism fanoPlane.toDesign fanoPlane.toDesign :=
+  let f (i : Fin 7) : Fin 7 := match i with
+    | 0 => 0
+    | 1 => 1
+    | 2 => 2
+    | 3 => 4
+    | 4 => 3
+    | 5 => 6
+    | 6 => 5
+  let σ (i : Fin 7) : Fin 7 := match i with
+    | 0 => 0
+    | 1 => 5
+    | 2 => 2
+    | 3 => 3
+    | 4 => 6
+    | 5 => 1
+    | 6 => 4
+  {
+  toFun := f
+  invFun := f
+  left_inv i := by fin_cases i; all_goals trivial
+  right_inv i := by fin_cases i; all_goals trivial
+  perm := {
+    toFun := σ
+    invFun := σ
+    left_inv i := by fin_cases i; all_goals trivial
+    right_inv i := by fin_cases i; all_goals trivial
+  }
+  map_blocks := by trivial
 }

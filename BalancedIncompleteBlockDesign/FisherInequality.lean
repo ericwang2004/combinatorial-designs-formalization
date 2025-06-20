@@ -1,7 +1,7 @@
 import BalancedIncompleteBlockDesign.IncidenceMatrix
 import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.Data.Real.Basic
+--import Mathlib.Data.Real.Basic
 
 open BalancedIncompleteBlockDesign Matrix Finset
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b l r : ℕ}
