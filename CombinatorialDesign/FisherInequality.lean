@@ -1,13 +1,13 @@
-import BalancedIncompleteBlockDesign.IncidenceMatrix
+import CombinatorialDesign.IncidenceMatrix
 import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
---import Mathlib.Data.Real.Basic
 
-open BalancedIncompleteBlockDesign Matrix Finset
+open CombinatorialDesign Matrix Finset
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b l r : ℕ}
 
-namespace BalancedIncompleteBlockDesign
+namespace CombinatorialDesign
 
+/-- ### Matrix Determinant Lemma -/
 theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [DecidableEq n]
     (u : Matrix n (Fin 1) α) (v : Matrix (Fin 1) n α) :
     det (1 + u * v) = 1 + (v * u) 0 0 := by
@@ -96,6 +96,7 @@ theorem r_gt_l_of_nontrivialrpbd (Φ : nontrivialRPBD X v b l r) : r > l := by
     simp only [mem_filter, mem_univ, true_and]
     exact ⟨hx, fun hyp ↦ (mem_compl.mp hy) hyp.2⟩
 
+/-- ### Fisher's Inequality -/
 theorem b_ge_v_of_nontrivialrpbd {α : Type*} [LinearOrderedField α]
     (Φ : nontrivialRPBD X v b l r) :
     b ≥ v := by
@@ -121,4 +122,4 @@ theorem b_ge_v_of_nontrivialrpbd {α : Type*} [LinearOrderedField α]
       · rw [Nat.cast_smul_eq_nsmul]
       · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
 
-end BalancedIncompleteBlockDesign
+end CombinatorialDesign

@@ -1,10 +1,10 @@
-import BalancedIncompleteBlockDesign.Basic
-import BalancedIncompleteBlockDesign.Isomorphism
+import CombinatorialDesign.Basic
+import CombinatorialDesign.Isomorphism
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
 
-open BalancedIncompleteBlockDesign
-open Finset
+namespace CombinatorialDesign
+open CombinatorialDesign Finset
 
 /-  The depiction of Fano Plane; six triples are given via a line,
   and the last one {1,4,6} is specified by a bold font.
@@ -66,3 +66,5 @@ def fanoPlaneIso : DesignIsomorphism fanoPlane.toDesign fanoPlane.toDesign :=
   }
   map_blocks := by trivial
 }
+
+end CombinatorialDesign

@@ -1,41 +1,7 @@
-import Mathlib.Data.Set.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Fintype.Card
+import CombinatorialDesign.Defs
 
-open Finset
-
-namespace BalancedIncompleteBlockDesign
-
-structure Design (X : Type*) [Fintype X] (b : ℕ) where
-  mk ::
-  blocks : Fin b → Finset X
-
-/-- Balanced Block Design -/
-structure BBD (X : Type*) [Fintype X] [DecidableEq X] (v b l : ℕ) extends Design X b where
-  mk ::
-  hX : Fintype.card X = v
-  balance : ∀ x y, x ≠ y → #{i | x ∈ blocks i ∧ y ∈ blocks i} = l
-
-/-- Regular Pairwise Balanced Design -/
-structure RPBD (X : Type*) [Fintype X] [DecidableEq X] (v b l r : ℕ) extends BBD X v b l where
-  mk ::
-  regularity : ∀ x, #{i | x ∈ blocks i} = r
-
-structure nontrivialRPBD (X : Type*) [Fintype X] [DecidableEq X] (v b l r : ℕ)
-    extends RPBD X v b l r where
-  mk ::
-  nontrivial : ∃ i, 0 < #(blocks i) ∧ #(blocks i) < v
-
-/-- Balanced Incomplete Block Design -/
-structure BIBD (X : Type*) [Fintype X] [DecidableEq X]
-    (v b k l : ℕ) extends BBD X v b l where
-  mk ::
-  hvk : v > k ∧ k ≥ 2
-  hA : ∀ i : Fin b, #(blocks i) = k
+open Finset CombinatorialDesign
+namespace CombinatorialDesign
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
@@ -167,11 +133,11 @@ theorem blocks_constant : ∀ x, k * b = rep_elem Φ x * v := by
 def BBD_to_Design : (BBD X v b l) → (Design X b) := BBD.toDesign
 
 --A RPBD is also a BBD
-def RPBD_to_BBD : (r : ℕ) → (RPBD X v b l r) → (BBD X v b l) := (fun _ => RPBD.toBBD)
+def RPBD_to_BBD : (r : ℕ) → (RPBD X v b l r) → (BBD X v b l) := fun _ ↦ RPBD.toBBD
 
 --Thus, a RPBD is also a Design
 def RPBD_to_Design : (r : ℕ) → (RPBD X v b l r) → (Design X b) :=
-  (fun r => BBD_to_Design ∘ (RPBD_to_BBD r))
+  fun r ↦ BBD_to_Design ∘ (RPBD_to_BBD r)
 
 --A BIBD is also a BBD
 def BIBD_to_BBD : (BIBD X v b k l) → (BBD X v b l) := BIBD.toBBD
@@ -186,4 +152,4 @@ def BIBD_to_RPBD :
   constructor
   . exact (rep_eq_rep_elem Φ)
 
-end BalancedIncompleteBlockDesign
+end CombinatorialDesign

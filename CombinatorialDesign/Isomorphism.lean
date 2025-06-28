@@ -1,13 +1,10 @@
-import BalancedIncompleteBlockDesign.IncidenceMatrix
-import Mathlib.GroupTheory.GroupAction.Quotient
+import CombinatorialDesign.IncidenceMatrix
 
-open BalancedIncompleteBlockDesign Finset MulAction Quotient Equiv
-namespace BalancedIncompleteBlockDesign
+open CombinatorialDesign Finset Equiv
+namespace CombinatorialDesign
 
-variable {X : Type*} [Fintype X] [DecidableEq X]
-  {Y : Type*} [Fintype Y] [DecidableEq Y]
-  {Z : Type*} [Fintype Z] [DecidableEq Z]
-  {b : ℕ} {α : Type*} [LinearOrderedRing α]
+variable {X : Type*} [DecidableEq X] {Y : Type*} [DecidableEq Y]
+  {Z : Type*} [DecidableEq Z] {b : ℕ} {α : Type*} [LinearOrderedRing α]
 
 @[ext]
 structure DesignIsomorphism (Φ₁ : Design X b) (Φ₂ : Design Y b)
@@ -117,74 +114,4 @@ theorem perm_of_iso (Φ₁ : Design X b) (Φ₂ : Design Y b)
     _ ↔ iso.toFun x ∈ Φ₂.blocks (iso.perm j) := by
       apply Finset.ext_iff.mp (iso.map_blocks _)
 
-variable {G : Type*} [Fintype G] [Group G] [MulAction G X]
-
-instance : SMul G (Finset X) where
-  smul g S := image (g • ·) S
-
-omit [Fintype X] [Fintype G] in
-theorem mem_smul_subset {g : G} {S : Finset X} {x : X} :
-    x ∈ g • S ↔ ∃ w ∈ S, g • w = x := by
-  constructor <;> intro hx
-  · have : x ∈ image (fun x ↦ g • x) S := hx
-    rwa [Finset.mem_image] at this
-  · have : g • S = image (fun x ↦ g • x) S := rfl
-    rwa [this, Finset.mem_image]
-
-instance : MulAction G (Finset X) where
-  one_smul S := by
-    ext
-    rw [mem_smul_subset]
-    exact ⟨fun ⟨_, _, ha⟩ ↦ by rwa [←ha, one_smul],
-      fun hx ↦ ⟨_, hx, by rw [one_smul]⟩⟩
-  mul_smul x y S := by
-    ext
-    simp only [mem_smul_subset, exists_exists_and_eq_and]
-    constructor; all_goals
-    exact fun ⟨_, hw, ha⟩ ↦ ⟨_, hw, by rw [←ha, mul_smul]⟩
-
-variable (G X)
-abbrev jOrbits := Quotient <| orbitRel G (Finset X)
-
-noncomputable instance : DecidableEq (Quotient <| orbitRel G X) :=
-  Classical.typeDecidableEq _
-
-noncomputable def countSubsetOrbit (O : jOrbits X G) (P : jOrbits X G) : ℕ :=
-  Quotient.lift (fun Yi ↦ #{A | ⟦A⟧ = O ∧ Yi ⊆ A}) (by
-  intro Y₁ Y₂ ⟨g, hg⟩
-  simp only at hg ⊢
-  have hg' : Y₂ = g⁻¹ • Y₁ := eq_inv_smul_iff.mpr hg
-  apply card_bijective (fun S ↦ g⁻¹ • S) (MulAction.bijective _)
-  intro S
-  constructor <;> intro hS <;>
-    simp only [mem_filter, mem_univ, true_and] at hS ⊢
-  · constructor
-    · rw [←hS.1]
-      exact sound (by use g⁻¹)
-    · intro x hx
-      rw [hg', mem_smul_subset] at hx
-      obtain ⟨_, hw, rfl⟩ := hx
-      rw [mem_smul_subset]
-      exact ⟨_, hS.2 hw, rfl⟩
-  · constructor
-    · rw [←hS.1]
-      exact sound (by use g; simp only [smul_inv_smul])
-    · intro x hx
-      rw [←hg, mem_smul_subset] at hx
-      obtain ⟨w, hw, rfl⟩ := hx
-      sorry
-  ) P
-
-variable {G X}
-def orbitCard (O : jOrbits X G) : ℕ :=
-  Quotient.lift (fun Yi ↦ #Yi) (by
-  intro Y₁ Y₂ ⟨g, hg⟩
-  simp only at hg ⊢
-  apply card_bijective (fun x ↦ g • x) (MulAction.bijective _)
-  intro x
-  sorry) O
-
-variable (G X)
-noncomputable def A (k₁ k₂ : ℕ) :
-    Matrix {O : jOrbits X G // orbitCard O = k₁} {O : jOrbits X G // orbitCard O = k₂} ℕ :=
-  Matrix.of (countSubsetOrbit X G · ·)
+end CombinatorialDesign

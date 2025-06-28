@@ -1,8 +1,8 @@
-import BalancedIncompleteBlockDesign.Basic
+import CombinatorialDesign.Basic
 import Mathlib.Data.Matrix.Basic
 
-open BalancedIncompleteBlockDesign Matrix Finset Fintype
-namespace BalancedIncompleteBlockDesign
+open CombinatorialDesign Matrix Finset Fintype
+namespace CombinatorialDesign
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 variable {m n : Type*} [Fintype m] [Fintype n] (α : Type*) [LinearOrderedRing α]
@@ -143,4 +143,4 @@ def bibd_of_bibdCondition {M : Matrix X (Fin b) α} (k l r : ℕ) (hM : bibdCond
 }
 
 
-end BalancedIncompleteBlockDesign
+end CombinatorialDesign

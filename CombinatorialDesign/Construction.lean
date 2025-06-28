@@ -1,8 +1,8 @@
-import BalancedIncompleteBlockDesign.IncidenceMatrix
+import CombinatorialDesign.IncidenceMatrix
 import Mathlib.Tactic.Linarith
 
-open BalancedIncompleteBlockDesign
-namespace BalancedIncompleteBlockDesign
+open CombinatorialDesign
+namespace CombinatorialDesign
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {v b₁ b₂ b k l₁ l₂ l : ℕ}
 open Finset
@@ -39,4 +39,4 @@ def complement [Inhabited X] (Φ : BIBD X v b k l) (hyp : v - k ≥ 2) :
       ←filter_and, Φ.balance x y hxy, ←Nat.two_mul]
 }
 
-end BalancedIncompleteBlockDesign
+end CombinatorialDesign

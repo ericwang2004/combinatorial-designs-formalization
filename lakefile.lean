@@ -7,4 +7,4 @@ package «combinatorial_designs» where
   -- add package configuration options here
 
 @[default_target]
-lean_lib BalancedIncompleteBlockDesign
+lean_lib CombinatorialDesign
