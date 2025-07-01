@@ -3,11 +3,11 @@ import CombinatorialDesign.Defs
 open Finset CombinatorialDesign
 namespace CombinatorialDesign
 
-variable {X : Type*} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
+variable {X} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
-theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
+theorem card_dependent {α β} [Fintype α] [Fintype β]
     (P : α → Prop) [DecidablePred P]
     (Q : α → β → Prop) [∀ x, DecidablePred (Q x)]
     {k : ℕ} (hk : ∀ x, P x → #{y | Q x y} = k) :
@@ -43,7 +43,7 @@ theorem card_dependent {α : Type*} [Fintype α] {β : Type*} [Fintype β]
       and_true]
     exact ⟨hx, ((g x hx).symm i).property⟩
 
-theorem card_of_swap {α : Type*} [Fintype α] {β : Type*} [Fintype β]
+theorem card_of_swap {α β} [Fintype α] [Fintype β]
     {P : α → β → Prop} [∀ x, DecidablePred (P x)]
     {Q : β → α → Prop} [∀ y, DecidablePred (Q y)]
     (hPQ : ∀ x y, P x y ↔ Q y x) :
@@ -146,10 +146,22 @@ def BIBD_to_BBD : (BIBD X v b k l) → (BBD X v b l) := BIBD.toBBD
 def BIBD_to_Design : (BIBD X v b k l) → (Design X b) := BBD.toDesign ∘ BIBD.toBBD
 
 --A BIBD is also an RPBD
-def BIBD_to_RPBD :
-    [Inhabited X] → (Φ : BIBD X v b k l) → (RPBD X v b l (rep Φ)) := by
-  intro P Φ
+noncomputable def BIBD_to_RPBD [Inhabited X] (Φ : BIBD X v b k l) :
+    (RPBD X v b l (rep Φ)) := by
   constructor
   . exact (rep_eq_rep_elem Φ)
+
+--A nonempty BIBD is also an RPBD
+ noncomputable def BIBD_to_nontrivialRPBD [Inhabited X] (Φ : BIBD X v b k l) (hb : b > 0) :
+    (nontrivialRPBD X v b l (rep Φ)) where
+  toRPBD := by
+    constructor; swap
+    · exact Φ.toBBD
+    · apply rep_eq_rep_elem
+  nontrivial := by
+    use ⟨0, hb⟩
+    simp only [Φ.hA]
+    exact ⟨lt_of_le_of_lt' Φ.hvk.2 Nat.zero_lt_two, Φ.hvk.1⟩
+
 
 end CombinatorialDesign

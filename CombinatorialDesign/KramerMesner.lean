@@ -3,8 +3,7 @@ import Mathlib.GroupTheory.GroupAction.Quotient
 
 open CombinatorialDesign Finset MulAction Quotient
 
-variable {X : Type*} [Fintype X] [DecidableEq X]
-  {G : Type*} [Fintype G] [Group G] [MulAction G X]
+variable {X G} [Fintype X] [DecidableEq X] [Fintype G] [Group G] [MulAction G X]
 
 instance : SMul G (Finset X) where
   smul g S := image (g • ·) S
@@ -77,7 +76,7 @@ noncomputable def A (k₁ k₂ : ℕ) :
     Matrix {O : jOrbits X G // orbitCard O = k₁} {O : jOrbits X G // orbitCard O = k₂} ℤ :=
   Matrix.of (countSubsetOrbit X G · ·)
 
-noncomputable instance : Fintype {O : jOrbits X G // orbitCard O = k} :=
+noncomputable instance {k} : Fintype {O : jOrbits X G // orbitCard O = k} :=
   Fintype.ofFinite _
 
 def KramerMesnerCondition {k : ℕ} (l : ℕ)

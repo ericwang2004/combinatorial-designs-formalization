@@ -3,8 +3,7 @@ import CombinatorialDesign.IncidenceMatrix
 open CombinatorialDesign Finset Equiv
 namespace CombinatorialDesign
 
-variable {X : Type*} [DecidableEq X] {Y : Type*} [DecidableEq Y]
-  {Z : Type*} [DecidableEq Z] {b : ℕ} {α : Type*} [LinearOrderedRing α]
+variable {X} [DecidableEq X] {Y} [DecidableEq Y] {Z} [DecidableEq Z] {b : ℕ}
 
 @[ext]
 structure DesignIsomorphism (Φ₁ : Design X b) (Φ₂ : Design Y b)
@@ -67,7 +66,7 @@ instance : Group (DesignAut Φ) where
   mul_one _ := rfl
   inv_mul_cancel := self_trans_symm
 
-theorem ite_eq_ite' {α : Type*} [Zero α] [One α] [NeZero (R := α) 1]
+theorem ite_eq_ite' {α} [Zero α] [One α] [NeZero (R := α) 1]
     {P Q : Prop} [Decidable P] [Decidable Q] :
     (if P then (1 : α) else 0) = (if Q then 1 else 0) ↔ (P ↔ Q) := by
   constructor <;> intro hyp
@@ -80,8 +79,8 @@ theorem ite_eq_ite' {α : Type*} [Zero α] [One α] [NeZero (R := α) 1]
     tauto
   · exact if_ctx_congr hyp (congrFun rfl) (congrFun rfl)
 
-def isoOfPerm (Φ₁ : Design X b) (Φ₂ : Design Y b)
-    (γ : X ≃ Y) (σ : Fin b ≃ Fin b)
+def isoOfPerm {α} [One α] [Zero α] [NeZero (R := α) 1]
+    (Φ₁ : Design X b) (Φ₂ : Design Y b) (γ : X ≃ Y) (σ : Fin b ≃ Fin b)
     (hyp : ∀ i j, (toIncMat α Φ₁) i j = (toIncMat α Φ₂) (γ i) (σ j))
     : DesignIsomorphism Φ₁ Φ₂ where
   toFun := γ
@@ -98,8 +97,8 @@ def isoOfPerm (Φ₁ : Design X b) (Φ₂ : Design Y b)
       rwa [←hyp]
     · exact ⟨γ.symm _, by rwa [hyp, γ.apply_symm_apply], γ.apply_symm_apply _⟩
 
-theorem perm_of_iso (Φ₁ : Design X b) (Φ₂ : Design Y b)
-    (iso : DesignIsomorphism Φ₁ Φ₂) :
+theorem perm_of_iso {α} [One α] [Zero α] [NeZero (R := α) 1]
+    (Φ₁ : Design X b) (Φ₂ : Design Y b) (iso : DesignIsomorphism Φ₁ Φ₂) :
     ∀ i j, (toIncMat α Φ₁) i j = (toIncMat α Φ₂) (iso.toFun i) (iso.perm j) := by
   intro x j
   simp only [toIncMat, Matrix.of_apply]

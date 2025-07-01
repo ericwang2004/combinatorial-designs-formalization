@@ -8,9 +8,8 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {v b l r : ℕ}
 namespace CombinatorialDesign
 
 /-- ### Matrix Determinant Lemma -/
-theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [DecidableEq n]
-    (u : Matrix n (Fin 1) α) (v : Matrix (Fin 1) n α) :
-    det (1 + u * v) = 1 + (v * u) 0 0 := by
+theorem det_one_add_column_mul_row {α n} [CommRing α] [Fintype n] [DecidableEq n]
+    (u : Matrix n (Fin 1) α) (v : Matrix (Fin 1) n α) : det (1 + u * v) = 1 + (v * u) 0 0 := by
   let A := fromBlocks (1 : Matrix n n α) 0 v (1 : Matrix (Fin 1) (Fin 1) α)
   let B := fromBlocks (1 + u * v) u 0 (1 : Matrix (Fin 1) (Fin 1) α)
   let C := fromBlocks (1 : Matrix n n α) 0 (-v) (1 : Matrix (Fin 1) (Fin 1) α)
@@ -50,8 +49,8 @@ theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [Dec
     _ = det D := by rw [hABCD]
     _ = 1 + (v * u) 0 0 := by rw [detD]
 
-theorem rank_ones_add_diagonal {α n : Type*} [Field α]
-    [Fintype n] [DecidableEq n] (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
+theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
+    (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
     rank (a • allOnes n n α + b • 1) = Fintype.card n := by
   let u := allOnes n (Fin 1) α
   let v := allOnes (Fin 1) n α
@@ -97,9 +96,9 @@ theorem r_gt_l_of_nontrivialrpbd (Φ : nontrivialRPBD X v b l r) : r > l := by
     exact ⟨hx, fun hyp ↦ (mem_compl.mp hy) hyp.2⟩
 
 /-- ### Fisher's Inequality -/
-theorem b_ge_v_of_nontrivialrpbd {α : Type*} [LinearOrderedField α]
-    (Φ : nontrivialRPBD X v b l r) :
-    b ≥ v := by
+theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (Φ : nontrivialRPBD X v b l r) : let M := toIncMat α Φ.toDesign
+    b ≥ rank M ∧ rank M ≥ v := by
   let M := toIncMat α Φ.toDesign
   have l_le_r := Nat.le_of_succ_le (r_gt_l_of_nontrivialrpbd Φ)
   have key : M * Mᵀ = l • (allOnes _ _ _) + (r - l) • 1 := by
@@ -112,14 +111,17 @@ theorem b_ge_v_of_nontrivialrpbd {α : Type*} [LinearOrderedField α]
       (div_nonneg (Nat.cast_nonneg l) (l_le_r |> Nat.cast_le.mpr |> sub_nonneg.mpr))
       (Nat.cast_nonneg' (Fintype.card X))
       |> (add_pos_of_pos_of_nonneg zero_lt_one) |> ne_of_gt)
-  calc
-    b ≥ rank M := by
-      have := rank_le_card_width M
-      rwa [Fintype.card_fin b] at this
-    _ ≥ rank (M * Mᵀ) := rank_mul_le_left _ _
-    _ = v := by
-      rw [key, ←Φ.hX, ←aux]; congr
-      · rw [Nat.cast_smul_eq_nsmul]
-      · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
+  constructor
+  · have := rank_le_card_width M
+    rwa [Fintype.card_fin b] at this
+  · refine ge_trans (rank_mul_le_left M Mᵀ) (ge_of_eq ?_)
+    rw [key, ←Φ.hX, ←aux]; congr
+    · rw [Nat.cast_smul_eq_nsmul]
+    · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
+
+theorem rank_eq_v_of_symmNontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (Φ : nontrivialRPBD X v v l r) : rank (toIncMat α Φ.toDesign) = v := by
+  have ⟨h₁, h₂⟩ := b_ge_rank_ge_v_of_nontrivialRPBD α Φ
+  exact le_antisymm h₁ h₂
 
 end CombinatorialDesign
