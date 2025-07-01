@@ -28,20 +28,9 @@ theorem det_one_add_column_mul_row {α n} [CommRing α] [Fintype n] [DecidableEq
       mul_one, Matrix.one_mul, Matrix.mul_one, Matrix.mul_neg, add_neg_cancel_right,
       zero_add, fromBlocks_inj, true_and]
     constructor
-    · ext i j
-      have i_eq_zero := Fin.fin_one_eq_zero i
-      subst i_eq_zero
-      simp only [add_apply, mul_apply, neg_apply, zero_apply, Fin.isValue, univ_unique,
-        Fin.default_eq_zero, sum_singleton, one_apply_eq]
-      rw [Mathlib.Tactic.RingNF.add_neg, sub_eq_zero, add_mul, one_mul, Finset.sum_mul]
-      simp_rw [mul_add, ←mul_assoc]
-      rw [Finset.sum_add_distrib, add_comm]
-      congr
-      rw [Fintype.sum_eq_single j]
-      · simp only [one_apply, reduceIte, mul_one]
-      · intro b hb
-        simp only [one_apply, mul_ite, mul_one, mul_zero, ite_eq_right_iff]
-        exact fun hb' ↦ False.elim (hb hb')
+    · rw [Matrix.mul_add, Matrix.mul_one, Matrix.add_mul, neg_add, Matrix.one_mul, add_comm v,
+        add_assoc, add_comm _ (-v), ←add_assoc v, add_neg_cancel, zero_add, ←Matrix.mul_assoc,
+        add_neg_cancel]
     · rw [add_comm]
   calc
     det (1 + u * v) = det A * det B * det C := by rw [detA, detB, detC, one_mul, mul_one]

@@ -5,6 +5,19 @@ namespace CombinatorialDesign
 
 variable {X} [Fintype X] [DecidableEq X] {v b k l : ℕ} (Φ : BIBD X v b k l)
 
+theorem v_pos_of_bibd (Φ : BIBD X v b k l) : v > 0 :=
+  lt_of_le_of_lt Φ.hvk.2 Φ.hvk.1 |> lt_trans Nat.zero_lt_two
+
+theorem k_pos_of_bibd (Φ : BIBD X v b k l) : k > 0 :=
+  Nat.zero_lt_of_lt Φ.hvk.2
+
+theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X v b l r) : r > 0 := by
+  obtain ⟨i, hi, _⟩ := Ψ.nontrivial
+  obtain ⟨x, hx⟩ := card_pos.mp hi
+  rw [←Ψ.regularity x, gt_iff_lt, card_pos]
+  use i
+  simp only [mem_filter, mem_univ, true_and, hx]
+
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
 theorem card_dependent {α β} [Fintype α] [Fintype β]
@@ -127,6 +140,18 @@ theorem blocks_constant : ∀ x, k * b = rep_elem Φ x * v := by
   rw [this] at count₁
   have : #(filter P₁ univ) = v := by simp only [filter_True, filter_univ_mem, P₁]; exact Φ.hX
   rwa [this] at count₁
+
+theorem kb_eq_repv [Inhabited X] : k * b = rep Φ * v := by
+  let x : X := Classical.choice instNonemptyOfInhabited
+  rw [blocks_constant _ x, rep_eq_rep_elem]
+
+theorem b_eq_v_iff_rep_eq_k [Inhabited X] (hb : b > 0) : b = v ↔ rep Φ = k := by
+  have aux := kb_eq_repv Φ
+  constructor <;> intro h
+  · subst h
+    exact Nat.eq_of_mul_eq_mul_right hb aux.symm
+  · rw [h] at aux
+    exact Nat.eq_of_mul_eq_mul_left (k_pos_of_bibd Φ) aux
 
 /-- Useful coercions --/
 --A BBD is also a Design

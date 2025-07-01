@@ -14,6 +14,16 @@ def toIncMat (α) [One α] [Zero α] (Φ : Design X b) :
 def fromIncMat (α) [DecidableEq α] [One α] (M : Matrix X (Fin b) α) : Design X b where
   blocks := fun i ↦ {x | M x i = 1}
 
+theorem col_sum_incmat (α) [DecidableEq α] [AddCommMonoidWithOne α] (j : Fin b) :
+    ∑ x, (toIncMat α Φ.toDesign) x j = k := by
+  simp only [toIncMat, of_apply, Finset.sum_ite_mem, univ_inter, sum_const, nsmul_one]
+  rw [Φ.hA]
+
+theorem row_sum_incmat (α) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabited X] (x : X) :
+    ∑ j, (toIncMat α Φ.toDesign) x j = rep Φ := by
+  simp only [toIncMat, of_apply, sum_boole]
+  rw [←rep_eq_rep_elem _ x, rep_elem]
+
 noncomputable def dual (α) [DecidableEq α] [One α] [Zero α] (Φ : Design X b)
     : Design (Fin b) (Fintype.card X) :=
   fromIncMat α (reindex (Equiv.refl (Fin b)) (equivFin X) (toIncMat α Φ)ᵀ)
@@ -60,6 +70,12 @@ def bibdCondition (α) [Ring α] [LT α] [LE α] [DecidableEq m]
   rpbdCondition α l r M
 
 variable {r : ℕ} (Ψ : RPBD X v b l r)
+
+theorem rpbd_incmat_allOnes (α n) [Ring α] :
+    toIncMat α Ψ.toDesign * allOnes _ n _ = (r : α) • allOnes _ _ _ := by
+  ext
+  simp only [toIncMat, allOnes, mul_apply, of_apply, smul_apply, mul_one, sum_boole, smul_eq_mul]
+  rw [Ψ.regularity]
 
 theorem rpbdCondition_of_rpbd {α} [Ring α] :
     rpbdCondition α l r (toIncMat _ Ψ.toDesign) := by
