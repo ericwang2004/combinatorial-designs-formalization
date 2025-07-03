@@ -77,7 +77,7 @@ theorem rpbd_incmat_allOnes (α n) [Ring α] :
   simp only [toIncMat, allOnes, mul_apply, of_apply, smul_apply, mul_one, sum_boole, smul_eq_mul]
   rw [Ψ.regularity]
 
-theorem rpbdCondition_of_rpbd {α} [Ring α] :
+theorem rpbdCondition_of_rpbd (α) [Ring α] :
     rpbdCondition α l r (toIncMat _ Ψ.toDesign) := by
   constructor
   · intro i j
@@ -103,7 +103,7 @@ theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRi
     · ext i j
       simp only [toIncMat, allOnes, mul_apply, of_apply, smul_apply, one_mul,
         Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.hA, smul_eq_mul]
-    · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ))
+    · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ) α)
 
 def bbd_of_rpbdCondition {α} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X (Fin b) α} (l r : ℕ) (hM : rpbdCondition α l r M) : BBD X (Fintype.card X) b l where

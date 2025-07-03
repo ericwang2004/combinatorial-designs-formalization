@@ -1,4 +1,4 @@
-import CombinatorialDesign.IncidenceMatrix
+import CombinatorialDesign.SymmetricBIBD
 import Mathlib.Tactic.Linarith
 
 open CombinatorialDesign

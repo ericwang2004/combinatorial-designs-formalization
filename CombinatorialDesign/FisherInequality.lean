@@ -38,9 +38,8 @@ theorem det_one_add_column_mul_row {α n} [CommRing α] [Fintype n] [DecidableEq
     _ = det D := by rw [hABCD]
     _ = 1 + (v * u) 0 0 := by rw [detD]
 
-theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
-    (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
-    rank (a • allOnes n n α + b • 1) = Fintype.card n := by
+theorem det_ones_add_diagonal {α} (n) [Field α] [Fintype n] [DecidableEq n] (a b : α) (hb : b ≠ 0) :
+    det (a • allOnes n n α + b • 1) = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by
   let u := allOnes n (Fin 1) α
   let v := allOnes (Fin 1) n α
   have expr : a • allOnes n n α + b • 1 = b • (1 + ((a / b) • u) * v) := by
@@ -57,15 +56,19 @@ theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
   simp only [smul_mul, Fin.isValue, Matrix.mul_smul, smul_apply, smul_eq_mul,
     v_mul_u, allOnes, smul_eq_mul, mul_one, of_apply, ] at det_expr
   simp only [nsmul_eq_mul, mul_one] at det_expr
-  have := calc
+  calc
     det (a • allOnes n n α + b • 1) = det (b • (1 + (a / b) • (u * v))) := by rw [expr, smul_mul, smul_add]
     _ = b ^ Fintype.card n * det (1 + (a / b) • (u * v)) := by rw [det_smul]
     _ = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by rw [det_expr]
-    _ ≠ 0 := mul_ne_zero (pow_ne_zero _ hb) hab
-  apply rank_of_isUnit
-  rwa [isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
 
-theorem r_gt_l_of_nontrivialrpbd (Φ : nontrivialRPBD X v b l r) : r > l := by
+theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
+    (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
+    rank (a • allOnes n n α + b • 1) = Fintype.card n := by
+  apply rank_of_isUnit
+  rw [isUnit_iff_isUnit_det, det_ones_add_diagonal n a b hb, isUnit_iff_ne_zero]
+  exact mul_ne_zero (pow_ne_zero _ hb) hab
+
+theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD X v b l r) : l < r := by
   rcases Φ.nontrivial with ⟨i, hi₀, hi₁⟩
   rcases card_pos.mp hi₀ with ⟨x, hx⟩
   have := calc
@@ -85,21 +88,21 @@ theorem r_gt_l_of_nontrivialrpbd (Φ : nontrivialRPBD X v b l r) : r > l := by
     exact ⟨hx, fun hyp ↦ (mem_compl.mp hy) hyp.2⟩
 
 /-- ### Fisher's Inequality -/
-theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     (Φ : nontrivialRPBD X v b l r) : let M := toIncMat α Φ.toDesign
     b ≥ rank M ∧ rank M ≥ v := by
   let M := toIncMat α Φ.toDesign
-  have l_le_r := Nat.le_of_succ_le (r_gt_l_of_nontrivialrpbd Φ)
+  have l_lt_r := l_lt_r_of_nontrivialRPBD Φ
+  have l_le_r := Nat.le_of_succ_le l_lt_r
   have key : M * Mᵀ = l • (allOnes _ _ _) + (r - l) • 1 := by
     rw [(rpbdCondition_of_rpbd (α := α) Φ.toRPBD).2, ←Nat.cast_sub,
       Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
     exact l_le_r
-  have aux := rank_ones_add_diagonal (α := α) (n := X) l (r - l)
-    (sub_ne_zero.mpr (ne_of_gt (Nat.cast_lt.mpr (r_gt_l_of_nontrivialrpbd Φ))))
+  have aux := rank_ones_add_diagonal (l : α) (r - l)
+    (Nat.cast_lt.mpr l_lt_r |> ne_of_gt |> sub_ne_zero.mpr)
     (mul_nonneg
-      (div_nonneg (Nat.cast_nonneg l) (l_le_r |> Nat.cast_le.mpr |> sub_nonneg.mpr))
-      (Nat.cast_nonneg' (Fintype.card X))
-      |> (add_pos_of_pos_of_nonneg zero_lt_one) |> ne_of_gt)
+      (l_le_r |> Nat.cast_le.mpr |> sub_nonneg.mpr |> div_nonneg (l |> Nat.cast_nonneg))
+      (Fintype.card X |> Nat.cast_nonneg') |> (add_pos_of_pos_of_nonneg zero_lt_one) |> ne_of_gt)
   constructor
   · have := rank_le_card_width M
     rwa [Fintype.card_fin b] at this

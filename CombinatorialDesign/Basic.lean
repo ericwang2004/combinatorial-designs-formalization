@@ -11,6 +11,20 @@ theorem v_pos_of_bibd (Φ : BIBD X v b k l) : v > 0 :=
 theorem k_pos_of_bibd (Φ : BIBD X v b k l) : k > 0 :=
   Nat.zero_lt_of_lt Φ.hvk.2
 
+theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X v b l r) : v ≥ 2 := by
+  obtain ⟨i, hi₁, hi₂⟩ := Ψ.nontrivial
+  refine (Nat.two_le_iff v).mpr ?_
+  constructor
+  · exact Nat.ne_zero_of_lt hi₂
+  · rintro rfl
+    simp_all only [card_pos, Nat.lt_one_iff, card_eq_zero, Finset.not_nonempty_empty]
+
+theorem v_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X v b l r) : v > 0 :=
+  v_ge_two_of_nontrivialRPBD Ψ |> Nat.zero_lt_of_lt
+
+theorem v_ge_one_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X v b l r) : v ≥ 1 :=
+  v_ge_two_of_nontrivialRPBD Ψ |> Nat.one_le_of_lt
+
 theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X v b l r) : r > 0 := by
   obtain ⟨i, hi, _⟩ := Ψ.nontrivial
   obtain ⟨x, hx⟩ := card_pos.mp hi
