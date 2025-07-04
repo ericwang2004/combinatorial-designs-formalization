@@ -1,6 +1,9 @@
 import CombinatorialDesign.FisherInequality
 import Mathlib.Data.Matrix.Rank
 import Mathlib.Data.Real.Basic
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Data.Real.Irrational
 
 open CombinatorialDesign Matrix Finset
 namespace CombinatorialDesign
@@ -37,7 +40,7 @@ theorem card_inter_block_eq_l
     rw [col_sum_incmat, sum_ite, sum_eq_single _ (by
       simp only [mem_filter, mem_univ]; tauto) (by simp only [mem_filter, mem_univ]; tauto),
       filter_ne', sum_erase_eq_sub (mem_univ _), ←sum_mul, row_sum_incmat,
-      (b_eq_v_iff_rep_eq_k Φ (v_pos_of_bibd Φ)).mp rfl]
+      (b_eq_v_iff_rep_eq_k Φ).mp rfl]
     group
   have := ext_iff.mpr (eq_of_full_rank_mul_eq (Fintype.equivFinOfCardEq Φ.hX) (by
     rw [Fintype.card_fin, rankM]) MMtM) i j
@@ -115,20 +118,38 @@ theorem int_det_of_int_matrix {n} [Fintype n] [DecidableEq n]
 
 theorem perfect_square_of_even_symmBIBD [Inhabited X] (hv : Even v) (Φ : BIBD X v v k l) :
     IsSquare (k - l) := by
+  cases eq_or_ne (k - l) 0 with
+  | inl h => rw [h]; exact IsSquare.zero
+  | inr h =>
   let M := toIncMat ℝ Φ.toDesign
   let Mr := reindex (Equiv.refl _) (Fintype.equivFinOfCardEq Φ.hX |> Equiv.symm) M
-  have repk := (v_pos_of_bibd Φ |> b_eq_v_iff_rep_eq_k Φ).mp rfl
+  have repk := (b_eq_v_iff_rep_eq_k Φ).mp rfl
   have repl := BIBD_to_nontrivialRPBD Φ (v_pos_of_bibd Φ) |> l_lt_r_of_nontrivialRPBD
   have repl' := Nat.le_of_succ_le repl
+  have vge1 : v ≥ 1 := v_pos_of_bibd Φ
+  have kge1 : k ≥ 1 := k_pos_of_bibd Φ
+  have kl := le_of_le_of_eq repl' repk
+  have kl_cast_ne {α} [AddGroupWithOne α] [CharZero α] : (k : α) - l ≠ 0 :=
+    fun hyp ↦ by norm_cast at hyp
+  have lv1_cast : (l : ℝ) * (v - 1) = k * (k - 1) := by
+    have := eq_of_symmBIBD Φ; norm_cast
+  have kl_cast_ge {α} [Ring α] [CharZero α] [LinearOrder α] [IsStrictOrderedRing α]
+      : 0 ≤ (k : α) - l := by
+    norm_cast; exact (Nat.le_sub_iff_add_le' kl).mpr kl
   have MMt : M * Mᵀ = (l : ℝ) • allOnes X X _ + ((rep Φ : ℝ) - l) • 1 :=
     (rpbdCondition_of_rpbd (α := ℝ) (BIBD_to_RPBD Φ)).2
   have detMMt : det (M * Mᵀ) = k^2 * (k - l)^(v - 1) := by
     rw [MMt, det_ones_add_diagonal, Φ.hX, repk]
-    · sorry
-    · intro h
-      rw [←Nat.cast_sub repl', ←Nat.cast_zero, Nat.cast_inj,
-        ←Nat.add_right_cancel_iff (n := l), Nat.sub_add_cancel repl', zero_add] at h
-      rwa [h, lt_self_iff_false] at repl
+    · calc
+        ((k : ℝ) - l) ^ v * (1 + l / (k - l) * v) = (k - l) ^ v * (((k - l) + l * v) / (k - l)) := by
+          congr; rw [div_mul_eq_mul_div, ←div_self kl_cast_ne, div_add_div_same]
+        _ = (k - l) ^ v * ((k + l * (v - 1)) / (k - l)) := by congr 2; group
+        _ = (k - l) ^ v * (k ^ 2 / (k - l)) := by
+          congr; rw [lv1_cast]; group
+        _ = k ^ 2 * ((k - l) ^ v / (k - l) ^ 1) := by group
+        _ = k ^ 2 * (k - l) ^ (v - 1) := by
+          congr; rw [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne vge1]
+    · rw [repk]; exact kl_cast_ne
   have det_eq : det (M * Mᵀ) = det (Mr * Mrᵀ) := by aesop
   rw [detMMt, det_mul, det_transpose, ←pow_two] at det_eq
   have det_int : ∃ a : ℤ, a = Mr.det := by
@@ -139,6 +160,26 @@ theorem perfect_square_of_even_symmBIBD [Inhabited X] (hv : Even v) (Φ : BIBD X
       submatrix_apply, id_eq, of_apply, map_apply, Int.cast_ite, Int.cast_one, Int.cast_zero]
   obtain ⟨a, ha⟩ := det_int
   rw [←ha] at det_eq
-  sorry
+  have := congrArg Real.sqrt det_eq
+  simp only [Nat.cast_nonneg, pow_nonneg, Real.sqrt_mul, Real.sqrt_sq, Real.sqrt_sq_eq_abs] at this
+  have := EuclideanDomain.eq_div_of_mul_eq_right (k_pos_of_bibd Φ |> ne_of_gt |> (Nat.cast_ne_zero (R := ℝ)).mpr ) this
+  have notirr : ¬Irrational √((↑k - ↑l) ^ (v - 1)) := by
+    simp only [Irrational, Set.mem_range, not_exists, not_forall, Decidable.not_not]
+    use |a| / k
+    simp only [Int.cast_abs, Rat.cast_div, Rat.cast_abs, Rat.cast_intCast, Rat.cast_natCast]
+    exact this.symm
+  have square : IsSquare ((↑k - ↑l) ^ (v + 1) : ℚ) := by
+    suffices IsSquare ((↑k - ↑l) ^ (v - 1) : ℚ) by
+      have := IsSquare.mul this (IsSquare.sq (↑k - ↑l : ℚ))
+      rwa [←pow_add, ← Nat.sub_add_comm vge1, Nat.add_succ_sub_one] at this
+    by_contra ct
+    rw [←irrational_sqrt_ratCast_iff_of_nonneg (by apply pow_nonneg kl_cast_ge)] at ct
+    simp only [Rat.cast_pow, Rat.cast_sub, Rat.cast_natCast] at ct
+    exact notirr ct
+  obtain ⟨v', rfl⟩ := hv
+  have := Even.isSquare_pow (Even.add_self v') ((k : ℚ) - l) |> IsSquare.div square
+  rw [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne (Nat.le_add_right _ _),
+    add_tsub_cancel_left, pow_one, ←Nat.cast_sub kl] at this
+  exact Rat.isSquare_natCast_iff.mp this
 
 end CombinatorialDesign

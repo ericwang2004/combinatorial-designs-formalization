@@ -159,13 +159,18 @@ theorem kb_eq_repv [Inhabited X] : k * b = rep Φ * v := by
   let x : X := Classical.choice instNonemptyOfInhabited
   rw [blocks_constant _ x, rep_eq_rep_elem]
 
-theorem b_eq_v_iff_rep_eq_k [Inhabited X] (hb : b > 0) : b = v ↔ rep Φ = k := by
+theorem b_eq_v_iff_rep_eq_k [Inhabited X] : b = v ↔ rep Φ = k := by
   have aux := kb_eq_repv Φ
   constructor <;> intro h
-  · subst h
+  · have hb : b > 0 := by
+      rw [h]; exact v_pos_of_bibd Φ
+    subst h
     exact Nat.eq_of_mul_eq_mul_right hb aux.symm
   · rw [h] at aux
     exact Nat.eq_of_mul_eq_mul_left (k_pos_of_bibd Φ) aux
+
+theorem eq_of_symmBIBD [Inhabited X] (Φ : BIBD X v v k l) : l * (v - 1) = k * (k - 1) := by
+  rw [←rep_property Φ, (b_eq_v_iff_rep_eq_k Φ).mp rfl, mul_comm]
 
 /-- Useful coercions --/
 --A BBD is also a Design
