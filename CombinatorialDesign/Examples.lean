@@ -21,7 +21,7 @@ open CombinatorialDesign Finset
   For a better depiction, see
   https://en.wikipedia.org/wiki/Fano_plane#/media/File:Fano_plane.svg
 -/
-def fanoPlane : BIBD (Fin 7) 7 7 3 1 := {
+def fanoPlane : BIBD (Fin 7) (Fin 7) 3 1 := {
   blocks i := match i with
     | 0 => {0, 1, 2}
     | 1 => {2, 4, 5}
@@ -31,7 +31,6 @@ def fanoPlane : BIBD (Fin 7) 7 7 3 1 := {
     | 5 => {2, 3, 6}
     | 6 => {1, 4, 6}
   hvk := by norm_num
-  hX := rfl
   hA i := by fin_cases i; all_goals trivial
   balance x y _ := by fin_cases x, y; all_goals trivial
 }

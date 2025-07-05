@@ -4,30 +4,40 @@ import Mathlib.Tactic.Linarith
 open CombinatorialDesign
 namespace CombinatorialDesign
 
-variable {X} [Fintype X] [DecidableEq X] {v b₁ b₂ b k l₁ l₂ l : ℕ}
+variable {ι ι₁ ι₂ X} [Fintype X] [DecidableEq X]
+  [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
+  {k l₁ l₂ l : ℕ}
 open Finset
 
-def sum (Φ₁ : BIBD X v b₁ k l₁) (Φ₂ : BIBD X v b₂ k l₂) :
-    BIBD X v (b₁ + b₂) k (l₁ + l₂) where
-  blocks := Fin.addCases Φ₁.blocks Φ₂.blocks
-  hX := Φ₁.hX
+def sum (Φ₁ : BIBD ι₁ X k l₁) (Φ₂ : BIBD ι₂ X k l₂) :
+    BIBD (ι₁ ⊕ ι₂) X k (l₁ + l₂) where
+  blocks := by
+    apply Sum.elim
+    exact (fun i => Φ₁.blocks i)
+    exact (fun j => Φ₂.blocks j)
   hvk := Φ₁.hvk
-  hA i := by
-    cases i using Fin.addCases with
-    | left i₁ => rw [Fin.addCases_left]; exact Φ₁.hA i₁
-    | right i₂ => rw [Fin.addCases_right]; exact Φ₂.hA i₂
+  hA u := by
+    cases u with
+    | inl i => simpa using Φ₁.hA i
+    | inr j => simpa using Φ₂.hA j
   balance x y hxy := by
-    rw [←card_map finSumFinEquiv.symm.toEmbedding, map_filter, map_univ_equiv,
-      Equiv.symm_symm, ←univ_disjSum_univ, ←map_inl_disjUnion_map_inr, filter_disjUnion,
-      Finset.card_disjUnion]
-    simp [Finset.filter_map, Function.comp_def, Φ₁.balance x y hxy, Φ₂.balance x y hxy]
+    have balance₁ := Φ₁.balance x y hxy
+    have balance₂ := Φ₂.balance x y hxy
+    simp_rw [← balance₁ , ← balance₂]
+    rw [← @card_disjSum]
+    congr
+    ext u
+    cases u with
+    | inl i => simp
+    | inr j => simp
 
-noncomputable def complement [Inhabited X] (Φ : BIBD X v b k l) (hyp : v - k ≥ 2) :
-    BIBD X v b (v - k) (b - (2 * rep Φ - l)) where
+noncomputable def complement [Inhabited X] (Φ : BIBD ι X k l) (hyp : (Fintype.card X) - k ≥ 2) :
+    BIBD ι X ((Fintype.card X) - k) ((Fintype.card ι) - (2 * rep Φ - l)) where
   blocks := (Φ.blocks ·)ᶜ
-  hX := Φ.hX
   hvk := ⟨by have := Φ.hvk; norm_num; constructor <;> linarith, hyp⟩
-  hA i := by simp only [Pi.compl_apply]; rw [card_compl, Φ.hX, Φ.hA i]
+  hA i := by
+    have h := Φ.hA i
+    simpa [← h] using card_compl (Φ.blocks i)
   balance x y hxy := by
     simp only [Pi.compl_apply, mem_compl]
     rw [filter_and_not, filter_not, sdiff_sdiff_left, card_univ_diff]

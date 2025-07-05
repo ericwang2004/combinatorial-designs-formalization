@@ -3,7 +3,7 @@ import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 open CombinatorialDesign Matrix Finset
-variable {X : Type*} [Fintype X] [DecidableEq X] {v b l r : ℕ}
+variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {l r : ℕ}
 
 namespace CombinatorialDesign
 
@@ -68,11 +68,12 @@ theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
   rw [isUnit_iff_isUnit_det, det_ones_add_diagonal n a b hb, isUnit_iff_ne_zero]
   exact mul_ne_zero (pow_ne_zero _ hb) hab
 
-theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD X v b l r) : l < r := by
+omit [DecidableEq ι]
+theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
   rcases Φ.nontrivial with ⟨i, hi₀, hi₁⟩
   rcases card_pos.mp hi₀ with ⟨x, hx⟩
   have := calc
-    #((Φ.blocks i)ᶜ) = v - #(Φ.blocks i) := by rw [card_compl, Φ.hX]
+    #((Φ.blocks i)ᶜ) = (Fintype.card X) - #(Φ.blocks i) := by rw [card_compl]
     _ > 0 := Nat.zero_lt_sub_of_lt hi₁
   rcases card_pos.mp this with ⟨y, hy⟩
   have hxy : x ≠ y := by rintro ⟨_, _⟩; exact (mem_compl.mp hy) hx
@@ -89,8 +90,8 @@ theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD X v b l r) : l < r := by
 
 /-- ### Fisher's Inequality -/
 private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    (Φ : nontrivialRPBD X v b l r) : let M := toIncMat α Φ.toDesign
-    b ≥ rank M ∧ rank M ≥ v := by
+    (Φ : nontrivialRPBD ι X l r) : let M := toIncMat α Φ.toDesign
+    (Fintype.card ι) ≥ rank M ∧ rank M ≥ (Fintype.card X) := by
   let M := toIncMat α Φ.toDesign
   have l_lt_r := l_lt_r_of_nontrivialRPBD Φ
   have l_le_r := Nat.le_of_succ_le l_lt_r
@@ -105,14 +106,14 @@ private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α
       (Fintype.card X |> Nat.cast_nonneg') |> (add_pos_of_pos_of_nonneg zero_lt_one) |> ne_of_gt)
   constructor
   · have := rank_le_card_width M
-    rwa [Fintype.card_fin b] at this
+    rwa [Fintype.card] at this
   · refine ge_trans (rank_mul_le_left M Mᵀ) (ge_of_eq ?_)
-    rw [key, ←Φ.hX, ←aux]; congr
+    rw [key, ←aux]; congr
     · rw [Nat.cast_smul_eq_nsmul]
     · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
 
 theorem rank_eq_v_of_symmNontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    (Φ : nontrivialRPBD X v v l r) : rank (toIncMat α Φ.toDesign) = v := by
+    (Φ : nontrivialRPBD X X l r) : rank (toIncMat α Φ.toDesign) = (Fintype.card X) := by
   have ⟨h₁, h₂⟩ := b_ge_rank_ge_v_of_nontrivialRPBD α Φ
   exact le_antisymm h₁ h₂
 
