@@ -9,8 +9,7 @@ structure Design where
   blocks : ι → Finset X
 
 def reindexDesign {X Y ι ι'} (e : X ≃ Y) (hι : ι' ≃ ι) (Φ : Design ι X) : Design ι' Y where
-  blocks i := by
-    exact hι i |> Φ.blocks |> Finset.map e.toEmbedding
+  blocks i := hι i |> Φ.blocks |> Finset.map e.toEmbedding
 
 variable [DecidableEq X]
 

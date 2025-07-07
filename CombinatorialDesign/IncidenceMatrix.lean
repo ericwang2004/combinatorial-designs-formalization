@@ -1,6 +1,5 @@
 import CombinatorialDesign.Basic
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Matrix.Rank
+import CombinatorialDesign.MatrixLemmas
 
 open CombinatorialDesign Matrix Finset Fintype
 namespace CombinatorialDesign

@@ -16,7 +16,7 @@ theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fi
   refine (Nat.two_le_iff (Fintype.card X)).mpr ?_
   constructor
   · exact Nat.ne_zero_of_lt hi₂
-  · rintro p
+  · intro
     simp_all only [card_pos, Nat.lt_one_iff, card_eq_zero, Finset.not_nonempty_empty]
 
 theorem v_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X > 0 :=
