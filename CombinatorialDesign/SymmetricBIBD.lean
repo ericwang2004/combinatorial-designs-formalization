@@ -1,6 +1,5 @@
 import CombinatorialDesign.FisherInequality
 import CombinatorialDesign.MatrixLemmas
-import Mathlib.Data.Real.Irrational
 
 open CombinatorialDesign Matrix Finset
 namespace CombinatorialDesign
@@ -151,8 +150,5 @@ theorem sos_of_odd_symmBIBD [Inhabited X] {u : ℕ}
     have cong := MatCongr.trans cong₁ cong₂
     sorry
   | inr hv' => sorry
-  -- have cong₁ : (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ∼ₘ
-  --     (1 : Matrix ) := by sorry
-
 
 end CombinatorialDesign

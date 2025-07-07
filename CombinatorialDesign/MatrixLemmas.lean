@@ -70,8 +70,14 @@ theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
   rw [isUnit_iff_isUnit_det, det_ones_add_diagonal n a b hb, isUnit_iff_ne_zero]
   exact mul_ne_zero (pow_ne_zero _ hb) hab
 
+theorem isUnit_of_full_rank {n α} [Fintype n] [DecidableEq n] [Field α]
+    {A : Matrix n n α} (h : A.rank = Fintype.card n) : IsUnit A := by
+  rw [←linearIndependent_rows_iff_isUnit, linearIndependent_iff_card_eq_finrank_span,
+    ←h, rank_eq_finrank_span_row]
+  rfl
+
 theorem eq_of_full_rank_mul_eq {n m o α} [Fintype n] [Fintype m] [DecidableEq m] [Fintype o]
-    [CommRing α] {A : Matrix n m α} {B₁ B₂ : Matrix m o α} (f : n ≃ m)
+    [Field α] {A : Matrix n m α} {B₁ B₂ : Matrix m o α} (f : n ≃ m)
     (rankA : rank A = Fintype.card m) (h : A * B₁ = A * B₂) : B₁ = B₂ := by
   let A' := reindex f (Equiv.refl _) A
   have h' : A' * B₁ = A' * B₂ := by
@@ -80,8 +86,10 @@ theorem eq_of_full_rank_mul_eq {n m o α} [Fintype n] [Fintype m] [DecidableEq m
     specialize h (f.symm i') j
     rwa [mul_apply] at h
   have rankA' : rank A' = Fintype.card m := by rw [←rankA]; apply rank_reindex
-  -- need theorem that says if a matrix has full rank then it is invertible
-  sorry
+  obtain ⟨⟨_, A₁, _, hA₁⟩, rfl⟩ := isUnit_of_full_rank rankA'
+  calc
+    B₁ = A₁ * A' * B₁ := by rw [hA₁, Matrix.one_mul]
+    _ = B₂ := by rw [Matrix.mul_assoc, h', ←Matrix.mul_assoc, hA₁, Matrix.one_mul]
 
 structure MatCongr {m n α} [Fintype m] [DecidableEq m] [CommRing α]
     (N : Matrix n n α) (M : Matrix m m α) extends n ≃ m where
