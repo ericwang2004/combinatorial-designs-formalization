@@ -111,7 +111,17 @@ variable {l m n α : Type*} [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq
     toEquiv := c.toEquiv.symm
     A := (⅟c.A).submatrix c.toFun c.toFun
     inv := submatrixEquivInvertible _ c.toEquiv c.toEquiv
-    cong := sorry
+    cong := by
+      simp only [Equiv.invFun_as_coe, Equiv.symm_symm, Equiv.toFun_as_coe,
+        transpose_submatrix]
+      calc
+      _ = (⅟c.A * c.A * N * c.Aᵀ * ⅟c.Aᵀ).submatrix c.toEquiv c.toEquiv := by simp
+      _ = (⅟c.A * (M.submatrix c.invFun c.invFun) * (⅟c.A)ᵀ).submatrix c.toEquiv c.toEquiv := by rw [c.cong]; group; rfl
+      _ = _ := by
+        rw [←submatrix_mul_equiv (e₁ := c.toEquiv) (e₂ := Equiv.refl _) (e₃ := c.toEquiv)]
+        dsimp
+        -- congr doesn't do anything
+        sorry
   }
 
 @[refl] protected def refl (M : Matrix n n α) : M ∼ₘ M where
