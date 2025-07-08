@@ -91,37 +91,36 @@ theorem eq_of_full_rank_mul_eq {n m o α} [Fintype n] [Fintype m] [DecidableEq m
     B₁ = A₁ * A' * B₁ := by rw [hA₁, Matrix.one_mul]
     _ = B₂ := by rw [Matrix.mul_assoc, h', ←Matrix.mul_assoc, hA₁, Matrix.one_mul]
 
-structure MatCongr {m n α} [Fintype m] [DecidableEq m] [CommRing α]
+structure MatCongr {m n α} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing α]
     (N : Matrix n n α) (M : Matrix m m α) extends n ≃ m where
   A : Matrix m m α
   inv : Invertible A
-  cong : N.submatrix invFun invFun = A * M * Aᵀ
+  cong : (reindexAlgEquiv α α toEquiv) N = A * M * Aᵀ
 
 infixl:25 " ∼ₘ " => MatCongr
 
 namespace MatCongr
 
-variable {l m n α : Type*} [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
-  [CommRing α] {M : Matrix l l α} {N : Matrix m m α} {P : Matrix n n α}
+variable {m n o α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [Fintype o] [DecidableEq o]
+  [CommRing α] {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α}
 
 @[symm] protected def symm (c : M ∼ₘ N) : N ∼ₘ M :=
   have := c.inv
-  have := c.cong
   {
     toEquiv := c.toEquiv.symm
-    A := (⅟c.A).submatrix c.toFun c.toFun
-    inv := submatrixEquivInvertible _ c.toEquiv c.toEquiv
-    cong := by
-      simp only [Equiv.invFun_as_coe, Equiv.symm_symm, Equiv.toFun_as_coe,
-        transpose_submatrix]
-      calc
-      _ = (⅟c.A * c.A * N * c.Aᵀ * ⅟c.Aᵀ).submatrix c.toEquiv c.toEquiv := by simp
-      _ = (⅟c.A * (M.submatrix c.invFun c.invFun) * (⅟c.A)ᵀ).submatrix c.toEquiv c.toEquiv := by rw [c.cong]; group; rfl
+    A := (reindexAlgEquiv α α c.toEquiv.symm) ⅟c.A
+    inv := Invertible.map _ _
+    cong := by calc
+      _ = (reindexAlgEquiv α α c.toEquiv.symm) (⅟c.A * c.A * N * c.Aᵀ * ⅟c.Aᵀ) := by
+        congr
+        simp only [invOf_eq_nonsing_inv, inv_mul_of_invertible, one_mul,
+          mul_inv_cancel_right_of_invertible]
+      _ = (reindexAlgEquiv α α c.toEquiv.symm)
+          (⅟c.A * ((reindexAlgEquiv α α c.toEquiv) M) * ⅟c.Aᵀ) := by
+        rw [c.cong]; group
       _ = _ := by
-        rw [←submatrix_mul_equiv (e₁ := c.toEquiv) (e₂ := Equiv.refl _) (e₃ := c.toEquiv)]
-        dsimp
-        -- congr doesn't do anything
-        sorry
+        rw [reindexAlgEquiv_mul, reindexAlgEquiv_mul]; congr
+        exact (AlgEquiv.eq_symm_apply (reindexAlgEquiv _ _ _)).mp rfl
   }
 
 @[refl] protected def refl (M : Matrix n n α) : M ∼ₘ M where
@@ -130,17 +129,38 @@ variable {l m n α : Type*} [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq
   inv := invertibleOne
   cong := by rw [transpose_one, one_mul, mul_one]; rfl
 
-@[trans] protected def trans (c₁ : M ∼ₘ N) (c₂ : N ∼ₘ P) : M ∼ₘ P where
-  toEquiv := Equiv.trans c₁.toEquiv c₂.toEquiv
-  A := sorry
-  inv := sorry
-  cong := sorry
+@[trans] protected def trans (c₁ : M ∼ₘ N) (c₂ : N ∼ₘ O) : M ∼ₘ O :=
+  have := c₁.inv; have := c₂.inv
+  have := Invertible.map (reindexAlgEquiv α _ c₂.toEquiv) c₁.A
+  {
+    toEquiv := Equiv.trans c₁.toEquiv c₂.toEquiv
+    A := (reindexAlgEquiv α α c₂.toEquiv) c₁.A * c₂.A
+    inv := invertibleMul _ _
+    cong := by
+      calc
+        _ = (reindexAlgEquiv α α (Equiv.trans c₁.toEquiv c₂.toEquiv))
+            ((reindexAlgEquiv α α c₁.toEquiv.symm) (c₁.A * N * c₁.Aᵀ)) := by
+          congr; rw [←c₁.cong, ←AlgEquiv.symm_apply_eq]; rfl
+        _ = (reindexAlgEquiv α α c₂.toEquiv c₁.A) *
+            (reindexAlgEquiv α α c₂.toEquiv N) *
+            (reindexAlgEquiv α α c₂.toEquiv c₁.Aᵀ) := by
+          repeat rw [reindexAlgEquiv_mul]; congr 2
+          all_goals
+          ext
+          simp only [reindexAlgEquiv_apply, reindex_apply, Equiv.symm_symm,
+            submatrix_apply, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+        _ = (reindexAlgEquiv α α c₂.toEquiv c₁.A) *
+            (c₂.A * O * c₂.Aᵀ) *
+            (reindexAlgEquiv α α c₂.toEquiv c₁.Aᵀ) := by rw [←c₂.cong]
+        _ = _ := by
+          rw [transpose_mul]; group; congr
+  }
 
 def matDirectSum {l m n o} (A : Matrix l m α) (B : Matrix n o α) := fromBlocks A 0 0 B
 
 infixl:30 " ⊕ₘ " => matDirectSum
 
-def oplus_assoc : M ⊕ₘ N ⊕ₘ P ∼ₘ M ⊕ₘ (N ⊕ₘ P) :=
+def oplus_assoc : M ⊕ₘ N ⊕ₘ O ∼ₘ M ⊕ₘ (N ⊕ₘ O) :=
   sorry
 
 def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
