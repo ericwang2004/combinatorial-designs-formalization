@@ -92,10 +92,10 @@ theorem eq_of_full_rank_mul_eq {n m o α} [Fintype n] [Fintype m] [DecidableEq m
     _ = B₂ := by rw [Matrix.mul_assoc, h', ←Matrix.mul_assoc, hA₁, Matrix.one_mul]
 
 structure MatCongr {m n α} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing α]
-    (N : Matrix n n α) (M : Matrix m m α) extends n ≃ m where
-  A : Matrix m m α
+    (M : Matrix m m α) (N : Matrix n n α) extends m ≃ n where
+  A : Matrix n n α
   inv : Invertible A
-  cong : (reindexAlgEquiv α α toEquiv) N = A * M * Aᵀ
+  cong : (reindexAlgEquiv α α toEquiv) M = A * N * Aᵀ
 
 infixl:25 " ∼ₘ " => MatCongr
 
@@ -156,12 +156,18 @@ variable {m n o α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq
           rw [transpose_mul]; group; congr
   }
 
+def matCongrOfReindex (e : m ≃ n) (h : reindex e e M = N) : M ∼ₘ N where
+  toEquiv := e
+  A := 1
+  inv := invertibleOne
+  cong := by rw [one_mul, transpose_one, mul_one, ←h]; rfl
+
 def matDirectSum {l m n o} (A : Matrix l m α) (B : Matrix n o α) := fromBlocks A 0 0 B
 
 infixl:30 " ⊕ₘ " => matDirectSum
 
 def oplus_assoc : M ⊕ₘ N ⊕ₘ O ∼ₘ M ⊕ₘ (N ⊕ₘ O) :=
-  sorry
+  matCongrOfReindex (Equiv.sumAssoc _ _ _) (by aesop)
 
 def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
     (m : ℤ) (mpos : m > 0) : m • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
