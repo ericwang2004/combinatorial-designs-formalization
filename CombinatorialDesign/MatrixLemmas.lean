@@ -156,6 +156,10 @@ variable {m n o α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq
           rw [transpose_mul]; group; congr
   }
 
+instance : Trans (MatCongr (m := m) (n := n) (α := α))
+    (MatCongr (n := o)) MatCongr where
+  trans := by intro; exact MatCongr.trans
+
 def matCongrOfReindex (e : m ≃ n) (h : reindex e e M = N) : M ∼ₘ N where
   toEquiv := e
   A := 1

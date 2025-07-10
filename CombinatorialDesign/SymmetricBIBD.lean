@@ -138,16 +138,12 @@ theorem sos_of_odd_symmBIBD [Inhabited X] {u : ℕ}
   cases Nat.even_or_odd u with
   | inl hu =>
     set v' := v - 1
-    have cong₁ : (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ∼ₘ
+    have := calc
+      (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ∼ₘ
         ((k : ℚ) - l) • (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ
-        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
-      sorry
-    have cong₂ : ((k : ℚ) - l) • (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ
-        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ∼ₘ
-        (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
-        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
-      sorry
-    have cong := MatCongr.trans cong₁ cong₂
+        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by sorry
+      _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
+        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by sorry
     sorry
   | inr hv' => sorry
 
