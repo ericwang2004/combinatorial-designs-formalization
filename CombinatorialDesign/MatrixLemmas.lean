@@ -1,5 +1,7 @@
 import Mathlib.Data.Matrix.Rank
 import Mathlib.Data.Finset.Basic
+import Mathlib.NumberTheory.SumFourSquares
+import Mathlib.LinearAlgebra.Matrix.Block
 
 open Matrix Finset
 
@@ -102,7 +104,7 @@ infixl:25 " ∼ₘ " => MatCongr
 namespace MatCongr
 
 variable {m n o α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [Fintype o] [DecidableEq o]
-  [CommRing α] {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α}
+  [Field α] [CharZero α] {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α}
 
 @[symm] protected def symm (c : M ∼ₘ N) : N ∼ₘ M :=
   have := c.inv
@@ -173,14 +175,72 @@ infixl:30 " ⊕ₘ " => matDirectSum
 def oplus_assoc : M ⊕ₘ N ⊕ₘ O ∼ₘ M ⊕ₘ (N ⊕ₘ O) :=
   matCongrOfReindex (Equiv.sumAssoc _ _ _) (by aesop)
 
-def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
+noncomputable def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
     (m : ℤ) (mpos : m > 0) : m • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
-  sorry
+  have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
+    Nat.sum_four_squares m.toNat
+  set a := this.choose with ha
+  set b:= this.choose_spec.choose with hb
+  set c := this.choose_spec.choose_spec.choose with hc
+  set d := this.choose_spec.choose_spec.choose_spec.choose with hd
+  set hsum := this.choose_spec.choose_spec.choose_spec.choose_spec
+  simp_rw [← ha, ← hb, ← hc, ← hd] at hsum
+  zify at hsum
+  simp only [Int.toNat_of_nonneg (le_of_lt mpos)] at hsum
+  set A':=!![(a : α), (b : α), (c : α), (d : α);
+     (b : α), -(a : α), (d : α), -(c : α);
+     (c : α), -(d : α), -(a : α), (b : α);
+     (d : α), (c : α), -(b : α), -(a : α)] with hA'
+  have HA' : A' * A'ᵀ = (m : α) • 1 := by
+    ext i j
+    by_cases hij : i = j
+    . subst hij
+      fin_cases i
+      <;> simp [Matrix.mul_apply, dotProduct, Fin.sum_univ_four, A', ← pow_two, ← hsum]
+      <;> ring
+    . fin_cases i
+      <;> fin_cases j
+      <;> first
+        | cases hij rfl
+        | simp [ Matrix.mul_apply, Matrix.one_apply, dotProduct,
+                Fin.sum_univ_four, A', hij]; ring
+  let k := Fintype.card n / 4
+  let e₁ : n ≃ Fin (4 * k) := Fintype.equivFinOfCardEq (by rw [Nat.mul_div_cancel' hn])
+  let e₂ : Fin (4 * k) ≃ Fin 4 × Fin k := finProdFinEquiv.symm
+  let e : n ≃ Fin 4 × Fin k := Equiv.trans e₁ e₂
+  set A := reindex e.symm e.symm (blockDiagonal (fun _ : Fin k ↦ A')) with h
+  have HA : A * Aᵀ = (m : α) • (1 : Matrix n n α) := by
+    simp only [A]
+    rw [reindex_apply, transpose_submatrix, blockDiagonal_transpose, Equiv.symm_symm,
+      submatrix_mul_equiv, ← @blockDiagonal_mul, HA']
+    ext i j
+    simp only [submatrix_apply, smul_apply, smul_eq_mul, smul_one_eq_diagonal,
+      blockDiagonal_diagonal, diagonal_apply]
+    by_cases p : i = j
+    . subst p
+      simp only [↓reduceIte, one_apply_eq, mul_one, A, A']
+    . simp only [one_apply_ne p]
+      have h_ne : (e i ≠ e j) := by
+        simp [ne_eq, EmbeddingLike.apply_eq_iff_eq, p]
+      simp only [h_ne, ↓reduceIte, mul_zero, A, A']
+  have A_is_invertible : Invertible A := by
+    refine A.invertibleOfRightInverse ?_ ?_
+    exact (m : α)⁻¹ • Aᵀ
+    simp only [Algebra.mul_smul_comm, HA, A, A']
+    refine inv_smul_smul₀ ?_ 1
+    refine Int.cast_ne_zero.mpr  (Ne.symm (Int.ne_of_lt mpos))
+  exact {
+    toEquiv := Equiv.refl n
+    A := A
+    inv := A_is_invertible
+    cong := by
+      simp only [reindexAlgEquiv_refl, zsmul_eq_mul, mul_one, map_intCast, HA, A', A]
+      simp only [Int.cast_smul_eq_zsmul, zsmul_eq_mul, mul_one, A', A]}
 
 /-- ## Witt cancellation lemma
  - from BW Jones: `The Arithmetic Theory Of Quadratic Forms`, chapter 1
 -/
-def oplus_left_cancel [Field α] [CharZero α] {A B : Matrix n n α} {C : Matrix m m α}
+def oplus_left_cancel {A B : Matrix n n α} {C : Matrix m m α}
     (hA : A = Aᵀ) (hB : B = Bᵀ) (hC : C = Cᵀ) (h : C ⊕ₘ A ∼ₘ C ⊕ₘ B) : A ∼ₘ B :=
   sorry
 
