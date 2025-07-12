@@ -101,8 +101,9 @@ infixl:25 " ∼ₘ " => MatCongr
 
 namespace MatCongr
 
-variable {m n o α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [Fintype o] [DecidableEq o]
-  [CommRing α] {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α}
+variable {m n o p α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
+  [Fintype o] [DecidableEq o] [Fintype p] [DecidableEq p] [CommRing α]
+  {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α} {P : Matrix p p α}
 
 @[symm] protected def symm (c : M ∼ₘ N) : N ∼ₘ M :=
   have := c.inv
@@ -173,8 +174,19 @@ infixl:30 " ⊕ₘ " => matDirectSum
 def oplus_assoc : M ⊕ₘ N ⊕ₘ O ∼ₘ M ⊕ₘ (N ⊕ₘ O) :=
   matCongrOfReindex (Equiv.sumAssoc _ _ _) (by aesop)
 
+def smul_oplus {a : α} : (a • M) ⊕ₘ (a • N) ∼ₘ a • (M ⊕ₘ N) where
+  toEquiv := Equiv.refl _
+  A := 1
+  inv := invertibleOne
+  cong := by
+    simp only [reindexAlgEquiv_refl, matDirectSum, AlgEquiv.coe_refl,
+      id_eq, Algebra.mul_smul_comm, one_mul, transpose_one, mul_one]
+    aesop
+
+def oplus_congr (h₁ : M ∼ₘ N) (h₂ : O ∼ₘ P) : (M ⊕ₘ O) ∼ₘ (N ⊕ₘ P) := by sorry
+
 def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
-    (m : ℤ) (mpos : m > 0) : m • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
+    (m : ℤ) (mpos : m > 0) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   sorry
 
 /-- ## Witt cancellation lemma

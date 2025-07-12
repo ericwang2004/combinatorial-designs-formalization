@@ -135,15 +135,36 @@ theorem sos_of_odd_symmBIBD [Inhabited X] {u : ℕ}
     (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
     ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x * x = (k - l) * y * y + (-1)^u * l * z * z := by
   set v := Fintype.card X
+  let A := toIncMat ℚ Φ.toDesign
   cases Nat.even_or_odd u with
   | inl hu =>
     set v' := v - 1
+    let A' := fromBlocks A (allOnes X (Fin 1) ℚ) (allOnes (Fin 1) X ℚ) (of (fun _ ↦ k/l))
+    let D := (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))
+    let E := ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ (-((k : ℚ) - l) / (l : ℚ)) •
+      (1 : Matrix (Fin 1) (Fin 1) ℚ)
+    have hA' : A' * D * A'ᵀ = E := by
+      simp only [A', D, E, fromBlocks_multiply]
+      sorry
+    --have hv' : 4 ∣ Fintype.card (Fin v') := by sorry
     have := calc
       (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ∼ₘ
-        ((k : ℚ) - l) • (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ
-        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by sorry
+          ((k : ℚ) - l) • (1 : Matrix (Fin v) (Fin v) ℚ) ⊕ₘ
+          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+        sorry
+      _ ∼ₘ ((k : ℚ) - l) • (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ
+          ((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
+          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+        apply MatCongr.oplus_congr
+        · sorry
+        · rfl
       _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
-        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by sorry
+          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+        apply MatCongr.oplus_congr
+        · apply MatCongr.oplus_congr
+          · sorry
+          · rfl
+        · rfl
     sorry
   | inr hv' => sorry
 
