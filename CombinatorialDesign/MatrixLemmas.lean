@@ -93,7 +93,7 @@ theorem eq_of_full_rank_mul_eq {n m o α} [Fintype n] [Fintype m] [DecidableEq m
     B₁ = A₁ * A' * B₁ := by rw [hA₁, Matrix.one_mul]
     _ = B₂ := by rw [Matrix.mul_assoc, h', ←Matrix.mul_assoc, hA₁, Matrix.one_mul]
 
-structure MatCongr {m n α} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing α]
+structure MatCongr {m n α : Type*} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing α]
     (M : Matrix m m α) (N : Matrix n n α) extends m ≃ n where
   A : Matrix n n α
   inv : Invertible A
@@ -104,7 +104,7 @@ infixl:25 " ∼ₘ " => MatCongr
 namespace MatCongr
 
 variable {m n o p α : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
-  [Fintype o] [DecidableEq o] [Fintype p] [DecidableEq p] [Field α] [CharZero α]
+  [Fintype o] [DecidableEq o] [Fintype p] [DecidableEq p] [Field α]
   {M : Matrix m m α} {N : Matrix n n α} {O : Matrix o o α} {P : Matrix p p α}
 
 @[symm] protected def symm (c : M ∼ₘ N) : N ∼ₘ M :=
@@ -176,6 +176,26 @@ infixl:30 " ⊕ₘ " => matDirectSum
 def oplus_assoc : M ⊕ₘ N ⊕ₘ O ∼ₘ M ⊕ₘ (N ⊕ₘ O) :=
   matCongrOfReindex (Equiv.sumAssoc _ _ _) (by aesop)
 
+theorem det_oplus : det (M ⊕ₘ N) = det M * det N := by
+  simp [matDirectSum]
+
+omit [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] in
+theorem oplus_symmetric (h₁ : M = Mᵀ) (h₂ : N = Nᵀ) : (M ⊕ₘ N) = (M ⊕ₘ N)ᵀ := by
+  ext i j
+  have h₁' := Matrix.ext_iff.mpr h₁
+  have h₂' := Matrix.ext_iff.mpr h₂
+  simp only [matDirectSum, transpose_apply] at h₁' h₂' ⊢
+  match i with
+  | Sum.inl i =>
+    match j with
+    | Sum.inl j => simp only [fromBlocks_apply₁₁, h₁']
+    | Sum.inr j => simp only [fromBlocks_apply₁₂, zero_apply, fromBlocks_apply₂₁]
+  | Sum.inr i =>
+    match j with
+    | Sum.inl j => simp only [fromBlocks_apply₂₁, zero_apply, fromBlocks_apply₁₂]
+    | Sum.inr j => simp only [fromBlocks_apply₂₂, h₂']
+
+
 def smul_oplus {a : α} : (a • M) ⊕ₘ (a • N) ∼ₘ a • (M ⊕ₘ N) where
   toEquiv := Equiv.refl _
   A := 1
@@ -187,7 +207,14 @@ def smul_oplus {a : α} : (a • M) ⊕ₘ (a • N) ∼ₘ a • (M ⊕ₘ N) w
 
 def oplus_congr (h₁ : M ∼ₘ N) (h₂ : O ∼ₘ P) : (M ⊕ₘ O) ∼ₘ (N ⊕ₘ P) := by sorry
 
-noncomputable def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
+def oplus_one (h : m ⊕ n ≃ o) :
+    (1 : Matrix m m α) ⊕ₘ (1 : Matrix n n α) ∼ₘ (1 : Matrix o o α) where
+  toEquiv := h
+  A := 1
+  inv := invertibleOne
+  cong := by simp [matDirectSum]
+
+noncomputable def congrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     (m : ℤ) (mpos : m > 0) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
     Nat.sum_four_squares m.toNat
@@ -246,13 +273,14 @@ noncomputable def congrOneOfFourDiv (hn : 4 ∣ Fintype.card n)
     A := A
     inv := A_is_invertible
     cong := by
-      simp only [reindexAlgEquiv_refl, zsmul_eq_mul, mul_one, map_intCast, HA, A', A]
-      simp only [Int.cast_smul_eq_zsmul, zsmul_eq_mul, mul_one, A', A]}
+      simp only [reindexAlgEquiv_refl, zsmul_eq_mul, mul_one, map_intCast, HA, A', A,
+        Int.cast_smul_eq_zsmul, zsmul_eq_mul, mul_one]
+      }
 
 /-- ## Witt cancellation lemma
  - from BW Jones: `The Arithmetic Theory Of Quadratic Forms`, chapter 1
 -/
-def oplus_left_cancel {A B : Matrix n n α} {C : Matrix m m α}
+def oplus_left_cancel [CharZero α] {A B : Matrix n n α} {C : Matrix m m α}
     (hA : A = Aᵀ) (hB : B = Bᵀ) (hC : C = Cᵀ) (h : C ⊕ₘ A ∼ₘ C ⊕ₘ B) : A ∼ₘ B :=
   sorry
 
