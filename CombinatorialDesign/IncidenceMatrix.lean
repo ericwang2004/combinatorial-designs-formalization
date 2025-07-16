@@ -26,7 +26,7 @@ theorem row_sum_incmat (α) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabite
   simp only [toIncMat, of_apply, sum_boole]
   rw [←rep_eq_rep_elem _ x, rep_elem]
 
-noncomputable def dual (α) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
+def dual (α) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
     : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
 
 theorem properties_of_dual {α} [Inhabited X] [DecidableEq α] [One α] [Zero α] [NeZero (R := α) 1] :

@@ -117,8 +117,8 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
-noncomputable def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ := by
-  let x : X := Classical.choice instNonemptyOfInhabited
+def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ := by
+  let x : X := default
   exact rep_elem Φ x
 
 theorem rep_property [Inhabited X] (Φ : BIBD ι X k l) :
@@ -191,13 +191,13 @@ def BIBD_to_BBD : (BIBD ι X k l) → (BBD ι X l) := BIBD.toBBD
 def BIBD_to_Design : (BIBD ι X k l) → (Design ι X) := BBD.toDesign ∘ BIBD.toBBD
 
 --A BIBD is also an RPBD
-noncomputable def BIBD_to_RPBD [Inhabited X] (Φ : BIBD ι X k l) :
+def BIBD_to_RPBD [Inhabited X] (Φ : BIBD ι X k l) :
     (RPBD ι X l (rep Φ)) := by
   constructor
   . exact (rep_eq_rep_elem Φ)
 
 --A nonempty BIBD is also an RPBD
- noncomputable def BIBD_to_nontrivialRPBD [Inhabited X] (Φ : BIBD ι X k l) (i : ι) :
+def BIBD_to_nontrivialRPBD [Inhabited X] (Φ : BIBD ι X k l) (i : ι) :
     (nontrivialRPBD ι X l (rep Φ)) where
   toRPBD := by
     constructor; swap

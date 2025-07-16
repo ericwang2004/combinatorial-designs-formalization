@@ -195,6 +195,11 @@ theorem oplus_symmetric (h₁ : M = Mᵀ) (h₂ : N = Nᵀ) : (M ⊕ₘ N) = (M 
     | Sum.inl j => simp only [fromBlocks_apply₂₁, zero_apply, fromBlocks_apply₁₂]
     | Sum.inr j => simp only [fromBlocks_apply₂₂, h₂']
 
+def smul_oplus_congr {a : α} (h : M ∼ₘ N) : a • M ∼ₘ a • N where
+  toEquiv := h.toEquiv
+  A := h.A
+  inv := h.inv
+  cong := by rw [Matrix.mul_smul, Matrix.smul_mul, ←h.cong]; rfl
 
 def smul_oplus {a : α} : (a • M) ⊕ₘ (a • N) ∼ₘ a • (M ⊕ₘ N) where
   toEquiv := Equiv.refl _
@@ -214,7 +219,7 @@ def oplus_one (h : m ⊕ n ≃ o) :
   inv := invertibleOne
   cong := by simp [matDirectSum]
 
-noncomputable def congrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
+noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     (m : ℤ) (mpos : m > 0) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
     Nat.sum_four_squares m.toNat
