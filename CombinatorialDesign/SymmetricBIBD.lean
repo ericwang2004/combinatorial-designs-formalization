@@ -28,9 +28,6 @@ theorem card_inter_block_eq_l
   have := ext_iff.mpr (eq_of_full_rank_mul_eq (Equiv.refl X) rankM MMtM) i j
   simp_all only [MtM, of_apply, inej, ite_false, Nat.cast_inj]
 
-theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k := by
-  sorry
-
 theorem bibd_of_symmNontrivialRPBD  {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
     ∀ i, #(Ψ.blocks i) * r = r + l * ((Fintype.card X) - 1) := by
   intro i
@@ -134,106 +131,106 @@ theorem perfect_square_of_even_symmBIBD [Inhabited X]
   rwa [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne (Nat.sub_le _ _),
     Nat.sub_sub_self vge1, pow_one, ←Nat.cast_sub kl, Rat.isSquare_natCast_iff] at this
 
-theorem sos_of_odd_symmBIBD [Inhabited X] {u : ℕ}
-    (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
-    ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x * x = (k - l) * y * y + (-1)^u * l * z * z := by
-  cases eq_or_ne l 0 with
-  | inl hl => use 0, 0, 1; simp [hl]
-  | inr hl =>
-  cases eq_or_ne k l with
-  | inl hkl => use 0, 1, 0; simp [hkl]
-  | inr hkl =>
-  set v := Fintype.card X
-  let A := toIncMat ℚ Φ.toDesign
-  have hrep : rep Φ = k := by
-    have := mul_eq_mul_right_iff.mp <| kb_eq_repv Φ
-    simp only [Fintype.card_ne_zero, or_false] at this
-    exact this.symm
-  have AAt : A * Aᵀ = (l : ℚ) • allOnes X X _ + ((rep Φ : ℚ) - l) • 1 :=
-    (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
-  cases Nat.even_or_odd u with
-  | inl hu =>
-    set v' := v - 1
-    let A' := fromBlocks A (allOnes X (Fin 1) ℚ) (allOnes (Fin 1) X ℚ) (of (fun _ ↦ k/l))
-    let D := (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))
-    let E := ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ (-((k : ℚ) - l) / (l : ℚ)) •
-      (1 : Matrix (Fin 1) (Fin 1) ℚ)
-    have hA' : A' * D * A'ᵀ = E := by
-      simp only [A', D, E, MatCongr.matDirectSum, fromBlocks_multiply, fromBlocks_transpose,
-        mul_one, Matrix.mul_zero, add_zero, neg_smul, Matrix.mul_neg, Matrix.mul_smul,
-        Matrix.mul_one, zero_add, Matrix.neg_mul, smul_mul, mul_neg, Algebra.mul_smul_comm, smul_of,
-        neg_of, neg_sub, fromBlocks_inj, AAt, allOnes]
-      constructor
-      · ext; simp [mul_apply, hrep]
-      constructor
-      · ext; simp [mul_apply, A, row_sum_incmat, hrep, mul_div_cancel₀, hl]
-      constructor
-      · ext; simp [mul_apply, A, row_sum_incmat, hrep, mul_div_cancel₀, hl]
-      ext i j
-      have : (1 : Matrix (Fin 1) (Fin 1) ℚ) i j = 1 := by
-        rw [one_apply, if_pos]; ext; simp only [Fin.val_eq_zero]
-      simp [mul_apply, mul_div_cancel₀, hl, this]
-      -- follows from eq_of_symmBIBD Φ
-      sorry
-    have detD : det D ≠ 0 := by simp [D, MatCongr.det_oplus, hl]
-    have detE : det E ≠ 0 := by
-      simp [E, MatCongr.det_oplus, hl, sub_eq_zero, hkl, hkl.symm]
-    have detA : det A' ≠ 0 := by
-      intro h
-      exact detE (by calc
-        det E = det (A' * D * A'ᵀ) := by rw [hA']
-        _ = det A' * det D * det A'ᵀ := by rw [det_mul, det_mul]
-        _ = 0 := by rw [h, zero_mul, zero_mul]
-      )
-    have invA' : Invertible A' := Ne.isUnit detA |> invertibleOfIsUnitDet _
-    have hv' : 4 ∣ Fintype.card (Fin v') := by sorry
-    have finadd : Fin v' ⊕ Fin 1 ≃ X :=
-      have : Fintype.card X = v' + 1 := by
-          simp_all only [add_tsub_cancel_right, v, v']
-      Equiv.trans finSumFinEquiv (Fintype.equivFinOfCardEq this).symm
-    have := calc
-      (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ ((1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
-          (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) ∼ₘ
-          (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) := by
-        refine MatCongr.trans MatCongr.oplus_assoc.symm ?_
-        refine MatCongr.oplus_congr (MatCongr.oplus_one ?_) (by rfl)
-        exact finadd
-      _ ∼ₘ ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ
-          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
-        symm
-        constructor
-        case A => exact A'
-        case inv => exact invA'
-        case toEquiv => exact Equiv.refl _
-        exact hA'.symm
-      _ ∼ₘ ((k : ℚ) - l) • (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ
-          ((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
-          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
-        refine MatCongr.oplus_congr ?_ (by rfl)
-        symm
-        refine MatCongr.trans MatCongr.smul_oplus ?_
-        apply MatCongr.smul_oplus_congr
-        apply MatCongr.oplus_one finadd
-      _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
-          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
-        repeat refine MatCongr.oplus_congr ?_ (by rfl)
-        symm
-        refine MatCongr.trans (MatCongr.matCongrOneOfFourDiv hv' (k - l) ?_).symm ?_
-        · simp only [Nat.cast_lt, Int.sub_pos]
-          exact Nat.lt_of_le_of_ne (l_le_k_of_symmBIBD Φ) hkl.symm
-        simp only [Int.cast_sub, Int.cast_natCast]
-        rfl
-      _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ ((((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
-          (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) := by
-        exact MatCongr.oplus_assoc
-    have ⟨_, B, _, cong⟩ := MatCongr.oplus_left_cancel (by
-      apply MatCongr.oplus_symmetric transpose_one.symm
-      rw [transpose_smul, transpose_one]) (by
-      apply MatCongr.oplus_symmetric
-      all_goals rw [transpose_smul, transpose_one]) transpose_one.symm this
-    have cong := Matrix.ext_iff.mpr cong
-    simp only [MatCongr.matDirectSum, mul_apply] at cong
-    sorry
-  | inr hv' => sorry
+-- theorem sos_of_odd_symmBIBD [Inhabited X] {u : ℕ}
+--     (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
+--     ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x * x = (k - l) * y * y + (-1)^u * l * z * z := by
+--   cases eq_or_ne l 0 with
+--   | inl hl => use 0, 0, 1; simp [hl]
+--   | inr hl =>
+--   cases eq_or_ne k l with
+--   | inl hkl => use 0, 1, 0; simp [hkl]
+--   | inr hkl =>
+--   set v := Fintype.card X
+--   let A := toIncMat ℚ Φ.toDesign
+--   have hrep : rep Φ = k := by
+--     have := mul_eq_mul_right_iff.mp <| kb_eq_repv Φ
+--     simp only [Fintype.card_ne_zero, or_false] at this
+--     exact this.symm
+--   have AAt : A * Aᵀ = (l : ℚ) • allOnes X X _ + ((rep Φ : ℚ) - l) • 1 :=
+--     (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
+--   cases Nat.even_or_odd u with
+--   | inl hu =>
+--     set v' := v - 1
+--     let A' := fromBlocks A (allOnes X (Fin 1) ℚ) (allOnes (Fin 1) X ℚ) (of (fun _ ↦ k/l))
+--     let D := (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))
+--       let E := ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ (-((k : ℚ) - l) / (l : ℚ)) •
+--         (1 : Matrix (Fin 1) (Fin 1) ℚ)
+--     have hA' : A' * D * A'ᵀ = E := by
+--       simp only [A', D, E, MatCongr.matDirectSum, fromBlocks_multiply, fromBlocks_transpose,
+--         mul_one, Matrix.mul_zero, add_zero, neg_smul, Matrix.mul_neg, Matrix.mul_smul,
+--         Matrix.mul_one, zero_add, Matrix.neg_mul, smul_mul, mul_neg, Algebra.mul_smul_comm, smul_of,
+--         neg_of, neg_sub, fromBlocks_inj, AAt, allOnes]
+--       constructor
+--       · ext; simp [mul_apply, hrep]
+--       constructor
+--       · ext; simp [mul_apply, A, row_sum_incmat, hrep, mul_div_cancel₀, hl]
+--       constructor
+--       · ext; simp [mul_apply, A, row_sum_incmat, hrep, mul_div_cancel₀, hl]
+--       ext i j
+--       have : (1 : Matrix (Fin 1) (Fin 1) ℚ) i j = 1 := by
+--         rw [one_apply, if_pos]; ext; simp only [Fin.val_eq_zero]
+--       simp [mul_apply, mul_div_cancel₀, hl, this]
+--       -- follows from eq_of_symmBIBD Φ
+--       sorry
+--     have detD : det D ≠ 0 := by simp [D, MatCongr.det_oplus, hl]
+--     have detE : det E ≠ 0 := by
+--       simp [E, MatCongr.det_oplus, hl, sub_eq_zero, hkl, hkl.symm]
+--     have detA : det A' ≠ 0 := by
+--       intro h
+--       exact detE (by calc
+--         det E = det (A' * D * A'ᵀ) := by rw [hA']
+--         _ = det A' * det D * det A'ᵀ := by rw [det_mul, det_mul]
+--         _ = 0 := by rw [h, zero_mul, zero_mul]
+--       )
+--     have invA' : Invertible A' := Ne.isUnit detA |> invertibleOfIsUnitDet _
+--     have hv' : 4 ∣ Fintype.card (Fin v') := by sorry
+--     have finadd : Fin v' ⊕ Fin 1 ≃ X :=
+--       have : Fintype.card X = v' + 1 := by
+--           simp_all only [add_tsub_cancel_right, v, v']
+--       Equiv.trans finSumFinEquiv (Fintype.equivFinOfCardEq this).symm
+--     have := calc
+--       (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ ((1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
+--           (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) ∼ₘ
+--           (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) := by
+--         refine MatCongr.trans MatCongr.oplus_assoc.symm ?_
+--         refine MatCongr.oplus_congr (MatCongr.oplus_one ?_) (by rfl)
+--         exact finadd
+--       _ ∼ₘ ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ
+--           (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+--         symm
+--         constructor
+--         case A => exact A'
+--         case inv => exact invA'
+--         case toEquiv => exact Equiv.refl _
+--         exact hA'.symm
+--       _ ∼ₘ ((k : ℚ) - l) • (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ
+--           ((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
+--           (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+--         refine MatCongr.oplus_congr ?_ (by rfl)
+--         symm
+--         refine MatCongr.trans MatCongr.smul_oplus ?_
+--         apply MatCongr.smul_oplus_congr
+--         apply MatCongr.oplus_one finadd
+--       _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
+--           (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ) := by
+--         repeat refine MatCongr.oplus_congr ?_ (by rfl)
+--         symm
+--         refine MatCongr.trans (MatCongr.matCongrOneOfFourDiv hv' (k - l) ?_).symm ?_
+--         · simp only [Nat.cast_lt, Int.sub_pos]
+--           exact Nat.lt_of_le_of_ne (l_le_k_of_symmBIBD Φ) hkl.symm
+--         simp only [Int.cast_sub, Int.cast_natCast]
+--         rfl
+--       _ ∼ₘ (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ ((((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ⊕ₘ
+--           (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) := by
+--         exact MatCongr.oplus_assoc
+--     have := MatCongr.oplus_left_cancel (by
+--       apply MatCongr.oplus_symmetric transpose_one.symm
+--       rw [transpose_smul, transpose_one]) (by
+--       apply MatCongr.oplus_symmetric
+--       all_goals rw [transpose_smul, transpose_one]) transpose_one.symm this
+--     have : this.toEquiv = Equiv.refl _ := by
+--       sorry
+--     sorry
+--   | inr hv' => sorry
 
 end CombinatorialDesign
