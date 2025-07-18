@@ -128,6 +128,11 @@ noncomputable def matCongrOplusLeftOfMatCongr (h : N ∼ₘ P) :
   cong := by
     simp [matDirectSum, fromBlocks_multiply, fromBlocks_transpose, h.cong]
 
+-- def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
+--     (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) :  M' ⊕ₘ (O ⊕ₘ N') ∼ₘ M ⊕ₘ (O ⊕ₘ N) where
+--   A := fromBlocks (h.A.toBlocks₁₁) (by sorry) (by sorry)
+--     (fromBlocks 0 0 0 h.A.toBlocks₂₂)
+
 def toQuadraticForm (M : Matrix m m α) : (m → α) → α :=
   fun x ↦ x ᵥ* M ⬝ᵥ x
 
@@ -144,25 +149,31 @@ theorem equiv_forms_of_matCongr {M N : Matrix m m α} (h : M ∼ₘ N) :
   rw [Set.Subset.antisymm_iff]
   exact ⟨equiv_forms_of_matCongr' h, equiv_forms_of_matCongr' h'⟩
 
-theorem foo {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
+theorem toQuadraticForm_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
     let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
     toQuadraticForm M x = a * (x (Sum.inl 0))^2 + b * (x (Sum.inr 0))^2 := by
-  simp only [toQuadraticForm, matDirectSum]
+  simp [toQuadraticForm, matDirectSum, vecMul_fromBlocks, dotProduct, vecMul]
+  group
 
-  sorry
+theorem image_of_two_by_two (a b : α) :
+    {toQuadraticForm (a • 1 ⊕ₘ b • 1 : Matrix (Fin 1 ⊕ Fin 1) _ _) x | x} =
+    {z | ∃ x₁ x₂, z = a * x₁^2 + b * x₂^2} := by
+  ext; exact ⟨
+    fun ⟨x, hx⟩ ↦ ⟨x (Sum.inl 0), x (Sum.inr 0), by
+      rw [←hx, toQuadraticForm_two_by_two]⟩,
+    fun ⟨x₁, x₂, hx⟩ ↦ ⟨Sum.elim (fun _ ↦ x₁) (fun _ ↦ x₂), by
+      rw [toQuadraticForm_two_by_two, hx]; rfl⟩
+  ⟩
 
--- theorem image_of_two_by_two {a b : α} :
---     let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
---     {toQuadraticForm M x | x} = {z | ∃ x₁ x₂, z = a * x₁^2 + b * x₂^2} := by
---   ext z
---   constructor <;> rintro ⟨x, hx⟩
---   · use Sum.inl 0 |> x, Sum.inr 0 |> x
---     rw [←hx, toQuadraticForm, matDirectSum, vecMul_fromBlocks]
---     simp
-
---     sorry
---   sorry
-
+theorem matCongr_two_by_two_condition {a b c d : α}
+    (h : a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ
+    b • (1 : Matrix (Fin 1) (Fin 1) α) ∼ₘ c • 1 ⊕ₘ d • 1) :
+    ∀ w x, ∃ y z, a * y^2 + b * z^2 = c * w^2 + d * x^2 := by
+  have aux := image_of_two_by_two a b
+  rw [equiv_forms_of_matCongr h, image_of_two_by_two c d] at aux
+  intro w x
+  obtain ⟨_, _, h⟩ := aux.subset (by use w, x)
+  exact ⟨_, _, h.symm⟩
 
 noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     (m : ℤ) (mpos : 0 < m) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by

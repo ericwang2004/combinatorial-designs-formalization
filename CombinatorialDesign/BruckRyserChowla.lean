@@ -58,14 +58,14 @@ theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k := by
 
 theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
-    ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x * x = (k - l) * y * y + (-1)^u * l * z * z := by
+    ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x^2 = (k - l) * y^2 + (-1)^u * l * z^2 := by
   cases eq_or_ne l 0 with
   | inl hl => use 0, 0, 1; simp [hl]
   | inr hl =>
   cases eq_or_ne k l with
   | inl hkl => use 0, 1, 0; simp [hkl]
   | inr hkl =>
-  set v := Fintype.card X
+  set v := Fintype.card X with v_def
   let A := toIncMat ℚ Φ.toDesign
   have hrep : rep Φ = k := by
     have := mul_eq_mul_right_iff.mp <| kb_eq_repv Φ
@@ -76,11 +76,17 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
   cases Nat.even_or_odd u with
   | inl hu =>
-    set v' := v - 1
+    set v' := v - 1 with v'_def
     have hv' : 4 ∣ v' := by
-      sorry
-    let e : X ≃ Fin v' ⊕ Fin 1 := by
-      sorry
+      have aux : v' = 2 * u := by
+        simp_all only [add_tsub_cancel_right]
+      obtain ⟨u', hu'⟩ := hu
+      use u'
+      rw [aux, hu', ←two_mul, ←mul_assoc]; rfl
+    have e : X ≃ Fin v' ⊕ Fin 1 := by
+      refine Equiv.trans (Fintype.equivFinOfCardEq ?_) finSumFinEquiv.symm
+      rw [v'_def, ←v_def]
+      simp_all only [add_tsub_cancel_right]
     have aux₁ : 1 ⊕ₘ 1 = reindexAlgEquiv ℚ ℚ e 1 := by
       simp only [MatCongr.matDirectSum]; aesop
     have aux₂ : ((k : ℚ) - l) • 1 ⊕ₘ ((k : ℚ) - l) • 1 =
@@ -101,8 +107,22 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       (MatCongr.matCongrOplusLeftOfMatCongr aux₃) |>
         MatCongr.oplusLeftCancel transpose_one.symm (by
         simp [MatCongr.transpose_oplus]) (by simp [MatCongr.transpose_oplus])
-
-    sorry
+    nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
+    obtain ⟨x, z, hxz⟩ := (MatCongr.matCongr_two_by_two_condition (α := ℚ) this) 1 0
+    simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, zero_pow, mul_zero, add_zero] at hxz
+    set d : ℚ := (x.den * z.den) ^ 2 with d_def
+    have hxz' := congrArg (HMul.hMul d) (add_eq_of_eq_add_neg hxz.symm).symm
+    have hd₁ : d * x ^ 2 = (x.num * z.den) ^ 2 := by
+      rw [d_def, mul_pow, mul_pow]; nth_rewrite 2 [←Rat.num_div_den x]
+      field_simp; group
+    have hd₂ : z ^ 2 * d = (x.den * z.num) ^ 2 := by
+      rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den z]
+      field_simp; group
+    rw [hd₁, mul_add, mul_comm d, mul_comm d, mul_assoc, hd₂, d_def] at hxz'
+    norm_cast at hxz'
+    exact ⟨x.num * z.den, x.den * z.den, x.den * z.num,
+      by simp, by field_simp [hxz']⟩
   | inr hu =>
     sorry
 
