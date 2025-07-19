@@ -105,6 +105,10 @@ omit [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] in
 theorem smul_oplus {a : α} : a • (M ⊕ₘ N) = a • M ⊕ₘ a • N := by
   rw [matDirectSum]; aesop
 
+omit [Fintype n] [Fintype m] in
+theorem one_oplus_one : (1 : Matrix m m α) ⊕ₘ (1 : Matrix n n α) = 1 := by
+  rw [matDirectSum, fromBlocks_one]
+
 def matCongrSmulOfMatCongr {a : α} (h : N ∼ₘ P) : a • N ∼ₘ a • P where
   A := h.A
   inv := h.inv
@@ -114,8 +118,8 @@ omit [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] in
 theorem transpose_oplus : (M ⊕ₘ N)ᵀ = Mᵀ ⊕ₘ Nᵀ := by
   simp [matDirectSum, fromBlocks_transpose]
 
-noncomputable def matCongrOplusLeftOfMatCongr (h : N ∼ₘ P) :
-    N ⊕ₘ M ∼ₘ P ⊕ₘ M where
+noncomputable def matCongrOplusRightOfMatCongr
+    (M : Matrix m m α) (h : N ∼ₘ P) : N ⊕ₘ M ∼ₘ P ⊕ₘ M where
   A := h.A ⊕ₘ 1
   inv := by
     have := h.inv
@@ -128,10 +132,33 @@ noncomputable def matCongrOplusLeftOfMatCongr (h : N ∼ₘ P) :
   cong := by
     simp [matDirectSum, fromBlocks_multiply, fromBlocks_transpose, h.cong]
 
--- def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
---     (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) :  M' ⊕ₘ (O ⊕ₘ N') ∼ₘ M ⊕ₘ (O ⊕ₘ N) where
---   A := fromBlocks (h.A.toBlocks₁₁) (by sorry) (by sorry)
---     (fromBlocks 0 0 0 h.A.toBlocks₂₂)
+theorem reindexAlgEquiv_oplus (M : Matrix m m α) (N : Matrix n n α) :
+    reindexAlgEquiv α α (Equiv.sumComm _ _) (M ⊕ₘ N) = N ⊕ₘ M := by
+  simp [matDirectSum]
+
+theorem reindexAlgEquiv_oplus_oplus
+    (M : Matrix m m α) (N : Matrix n n α) (O : Matrix o o α) :
+    reindexAlgEquiv α α (Equiv.sumCongr (Equiv.refl _) (Equiv.sumComm _ _))
+      (M ⊕ₘ (N ⊕ₘ O)) = (M ⊕ₘ (O ⊕ₘ N)) := by
+  aesop
+
+def matCongrCommOfMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
+    (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) : N' ⊕ₘ M' ∼ₘ N ⊕ₘ M := by
+  rw [←reindexAlgEquiv_oplus M N, ←reindexAlgEquiv_oplus M' N']
+  exact reindexMatCongr _ h
+
+noncomputable def matCongrOplusLeftOfMatCongr
+    (M : Matrix m m α) (h : N ∼ₘ P) : M ⊕ₘ N ∼ₘ M ⊕ₘ P :=
+  matCongrOplusRightOfMatCongr M h |> matCongrCommOfMatCongr
+
+noncomputable def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
+    (O : Matrix o o α) (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) :
+    M' ⊕ₘ (O ⊕ₘ N') ∼ₘ M ⊕ₘ (O ⊕ₘ N) := by
+  have h' := matCongrOplusRightOfMatCongr O h |> matCongrAssocOfMatCongr
+  let e : m ⊕ n ⊕ o ≃ m ⊕ o ⊕ n :=
+    Equiv.sumCongr (Equiv.refl _) (Equiv.sumComm _ _)
+  rw [←reindexAlgEquiv_oplus_oplus M' N' O, ←reindexAlgEquiv_oplus_oplus M N O]
+  exact reindexMatCongr _ h'
 
 def toQuadraticForm (M : Matrix m m α) : (m → α) → α :=
   fun x ↦ x ᵥ* M ⬝ᵥ x
@@ -176,7 +203,7 @@ theorem matCongr_two_by_two_condition {a b c d : α}
   exact ⟨_, _, h.symm⟩
 
 noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
-    (m : ℤ) (mpos : 0 < m) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
+    {m : ℤ} (mpos : 0 < m) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
     Nat.sum_four_squares m.toNat
   set a := this.choose with ha

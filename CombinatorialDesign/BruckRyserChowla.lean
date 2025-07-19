@@ -74,6 +74,9 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
   have l_le_k := l_le_k_of_symmBIBD Φ
   have AAt : A * Aᵀ = (l : ℚ) • allOnes X X _ + ((rep Φ : ℚ) - l) • 1 :=
     (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
+  have hkl' : 0 < Int.ofNat (k - l) := by
+    rw [Int.ofNat_eq_coe, Nat.cast_pos']
+    exact Nat.lt_of_le_of_ne l_le_k hkl.symm |> Nat.zero_lt_sub_of_lt
   cases Nat.even_or_odd u with
   | inl hu =>
     set v' := v - 1 with v'_def
@@ -99,16 +102,14 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       exact brcKey Φ hrep hl hkl |>.symm |> MatCongr.matCongrOplusReindexOfMatCongr _
     have aux₃ : ((k : ℚ) - l) • (1 : Matrix (Fin v') (Fin v') ℚ) ∼ₘ 1 := by
       rw [←Nat.cast_sub l_le_k]
-      apply MatCongr.matCongrOneOfFourDiv
-      · rw [Fintype.card_fin]; exact hv'
-      · rw [Int.ofNat_eq_coe, Nat.cast_pos']
-        exact Nat.lt_of_le_of_ne l_le_k hkl.symm |> Nat.zero_lt_sub_of_lt
+      exact MatCongr.matCongrOneOfFourDiv
+        (by rw [Fintype.card_fin]; exact hv') hkl'
     have := MatCongr.trans (MatCongr.matCongrAssocOfMatCongr key)
-      (MatCongr.matCongrOplusLeftOfMatCongr aux₃) |>
+      (MatCongr.matCongrOplusRightOfMatCongr _ aux₃) |>
         MatCongr.oplusLeftCancel transpose_one.symm (by
         simp [MatCongr.transpose_oplus]) (by simp [MatCongr.transpose_oplus])
     nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
-    obtain ⟨x, z, hxz⟩ := (MatCongr.matCongr_two_by_two_condition (α := ℚ) this) 1 0
+    obtain ⟨x, z, hxz⟩ := (MatCongr.matCongr_two_by_two_condition this) 1 0
     simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
       not_false_eq_true, zero_pow, mul_zero, add_zero] at hxz
     set d : ℚ := (x.den * z.den) ^ 2 with d_def
@@ -121,9 +122,51 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       field_simp; group
     rw [hd₁, mul_add, mul_comm d, mul_comm d, mul_assoc, hd₂, d_def] at hxz'
     norm_cast at hxz'
-    exact ⟨x.num * z.den, x.den * z.den, x.den * z.num,
-      by simp, by field_simp [hxz']⟩
+    use x.num * z.den, x.den * z.den, x.den * z.num
+    constructor
+    · simp
+    · rw [Even.neg_one_pow hu, one_mul, hxz']
+      norm_cast
   | inr hu =>
-    sorry
+    have cardX : 4 ∣ Fintype.card (X ⊕ Fin 1) := by
+      obtain ⟨u', hu'⟩ := hu
+      use u' + 1
+      rw [Fintype.card_sum, Fintype.card_fin, ←v_def, hv, hu']
+      omega
+    have aux : (((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ
+        (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
+        (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) ∼ₘ
+        1 ⊕ₘ (1 ⊕ₘ (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • 1) := by
+      apply MatCongr.matCongrAssocOfMatCongr
+      apply MatCongr.matCongrOplusRightOfMatCongr
+      rw [←MatCongr.smul_oplus, MatCongr.one_oplus_one, ←Nat.cast_sub l_le_k]
+      apply MatCongr.matCongrOneOfFourDiv cardX hkl'
+    have key := MatCongr.oplusLeftCancel transpose_one.symm (by
+      simp [MatCongr.transpose_oplus]) (by
+      simp [MatCongr.transpose_oplus]) <|
+        MatCongr.trans (brcKey Φ hrep hl hkl |>.symm |>
+        MatCongr.oplusInsertMatCongr
+        (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) aux
+    nth_rewrite 3 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at key
+    obtain ⟨y, z, hyz⟩ := (MatCongr.matCongr_two_by_two_condition key) 1 0
+    simp only [neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, zero_pow, mul_zero, add_zero] at hyz
+    set d : ℚ := (y.den * z.den) ^ 2 with d_def
+    have hyz' := congrArg (HMul.hMul d) hyz.symm
+    have hd₁ : y ^ 2 * d = (y.num * z.den) ^ 2 := by
+      rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den y]
+      field_simp; group
+    have hd₂ : z ^ 2 * d = (y.den * z.num) ^ 2 := by
+      rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den z]
+      field_simp; group
+    rw [mul_one, mul_add, mul_comm d, mul_comm d, neg_mul, mul_assoc,
+      mul_assoc, hd₁, hd₂, d_def] at hyz'
+    norm_cast at hyz'
+    use y.den * z.den, y.num * z.den, y.den * z.num
+    constructor
+    · simp
+    · rw [Odd.neg_one_pow hu, neg_mul, one_mul, ←Nat.cast_sub l_le_k,
+        neg_mul, ←hyz']
+      rfl
 
 end CombinatorialDesign
