@@ -50,6 +50,23 @@ def reindexMatCongr (e : n ≃ m) (c : N' ∼ₘ N) :
     cong := by simp [c.cong]
   }
 
+def ratCastMatCongrOfMatCongr (α : Type*) [Field α] [CharZero α]
+    {A B : Matrix m m ℚ} (h : A ∼ₘ B) :
+    RingHom.mapMatrix (Rat.castHom α) A ∼ₘ
+    RingHom.mapMatrix (Rat.castHom α) B where
+  A := RingHom.mapMatrix (Rat.castHom α) h.A
+  inv := by
+    have := h.inv
+    exact Invertible.map _ _
+  cong := by
+    have : ((Rat.castHom α).mapMatrix h.A)ᵀ =
+      (Rat.castHom α).mapMatrix h.Aᵀ := rfl
+    rw [this, ←RingHom.map_mul, ←RingHom.map_mul, ←h.cong]
+
+theorem ratCast_one (α : Type*) [Field α] [CharZero α] :
+    RingHom.mapMatrix (Rat.castHom α) (1 : Matrix m m ℚ) = 1 := by
+  exact RingHom.map_one _
+
 def matDirectSum (M : Matrix m m α) (N : Matrix n n α) :=
   fromBlocks M 0 0 N
 
@@ -57,6 +74,19 @@ infixl:60 " ⊕ₘ " => matDirectSum
 
 variable {o : Type*} [Fintype o] [DecidableEq o]
   {M : Matrix m m α} {O : Matrix o o α}
+
+theorem ratCast_smul [CharZero α] {a : ℚ} {A : Matrix m m ℚ} :
+    RingHom.mapMatrix (Rat.castHom α) (a • A) =
+    a • RingHom.mapMatrix (Rat.castHom α) A := by
+  ext; simp [Rat.smul_def]
+
+theorem ratCast_oplus (α : Type*) [Field α] [CharZero α]
+    {A : Matrix m m ℚ} {B : Matrix n n ℚ} :
+    RingHom.mapMatrix (Rat.castHom α) (A ⊕ₘ B) =
+    RingHom.mapMatrix (Rat.castHom α) A ⊕ₘ
+    RingHom.mapMatrix (Rat.castHom α) B := by
+  rw [matDirectSum, matDirectSum]
+  aesop
 
 def matDirectSumAssoc :
     reindexAlgEquiv α α (Equiv.sumAssoc _ _ _) (M ⊕ₘ N ⊕ₘ O) ∼ₘ
@@ -80,7 +110,6 @@ def matCongrAssocOfMatCongr {M' : Matrix m m α} {O' : Matrix o o α}
     _ ∼ₘ reindexAlgEquiv α α (Equiv.sumAssoc _ _ _) (M' ⊕ₘ N' ⊕ₘ O') :=
       reindexMatCongr (Equiv.sumAssoc _ _ _) h
     _ ∼ₘ M' ⊕ₘ (N' ⊕ₘ O') := matDirectSumAssoc
-
 
 theorem det_oplus : det (M ⊕ₘ N) = det M * det N := by
   rw [matDirectSum, det_fromBlocks_zero₂₁]

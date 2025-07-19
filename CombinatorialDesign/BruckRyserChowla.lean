@@ -1,8 +1,9 @@
 import CombinatorialDesign.FisherInequality
 import CombinatorialDesign.MatrixCongruence
 import CombinatorialDesign.SymmetricBIBD
+import Mathlib.Data.Real.Basic
 
-open CombinatorialDesign Matrix Finset
+open CombinatorialDesign Matrix Finset MatCongr
 namespace CombinatorialDesign
 
 variable {ι X} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {v k l : ℕ} (Φ : BIBD X X k l)
@@ -35,7 +36,7 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     (1 : Matrix (Fin 1) (Fin 1) ℚ)
   let D := (1 : Matrix X X ℚ) ⊕ₘ (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ))
   have hA' : E = A' * D * A'ᵀ := by
-    simp only [A', D, E, MatCongr.matDirectSum, fromBlocks_multiply, fromBlocks_transpose,
+    simp only [A', D, E, matDirectSum, fromBlocks_multiply, fromBlocks_transpose,
       mul_one, Matrix.mul_zero, add_zero, neg_smul, Matrix.mul_neg, Matrix.mul_smul,
       Matrix.mul_one, zero_add, Matrix.neg_mul, smul_mul, mul_neg, Algebra.mul_smul_comm, smul_of,
       neg_of, neg_sub, fromBlocks_inj, AAt, allOnes]
@@ -63,9 +64,9 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     A := A'
     inv := by
       have detD : det D ≠ 0 := by
-        simp [D, MatCongr.det_oplus, hl]
+        simp [D, det_oplus, hl]
       have detE : det E ≠ 0 := by
-        simp [E, MatCongr.det_oplus, hl, sub_eq_zero, hkl, hkl.symm]
+        simp [E, det_oplus, hl, sub_eq_zero, hkl, hkl.symm]
       have detA' : det A' ≠ 0 := by
         intro h
         exact detE (by calc
@@ -112,25 +113,31 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       rw [v'_def, ←v_def]
       simp_all only [add_tsub_cancel_right]
     have aux₁ : 1 ⊕ₘ 1 = reindexAlgEquiv ℚ ℚ e 1 := by
-      simp only [MatCongr.matDirectSum]; aesop
+      simp only [matDirectSum]; aesop
     have aux₂ : ((k : ℚ) - l) • 1 ⊕ₘ ((k : ℚ) - l) • 1 =
         reindexAlgEquiv ℚ ℚ e (((k : ℚ) - l) • 1) := by
-      rw [map_rat_smul, ←MatCongr.smul_oplus, aux₁]
+      rw [map_rat_smul, ←smul_oplus, aux₁]
     have key : (1 : Matrix (Fin v') (Fin v') ℚ) ⊕ₘ (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
         (-(l : ℚ) • (1 : Matrix (Fin 1) (Fin 1) ℚ)) ∼ₘ
         ((k : ℚ) - l) • 1 ⊕ₘ ((k : ℚ) - l) • 1 ⊕ₘ (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • 1 := by
       rw [aux₁, aux₂]
-      exact brcKey Φ hrep hl hkl |>.symm |> MatCongr.matCongrOplusReindexOfMatCongr _
+      exact brcKey Φ hrep hl hkl |>.symm |> matCongrOplusReindexOfMatCongr _
     have aux₃ : ((k : ℚ) - l) • (1 : Matrix (Fin v') (Fin v') ℚ) ∼ₘ 1 := by
       rw [←Nat.cast_sub l_le_k]
-      exact MatCongr.matCongrOneOfFourDiv
+      exact matCongrOneOfFourDiv
         (by rw [Fintype.card_fin]; exact hv') hkl'
-    have := MatCongr.trans (MatCongr.matCongrAssocOfMatCongr key)
-      (MatCongr.matCongrOplusRightOfMatCongr _ aux₃) |>
-        MatCongr.oplusLeftCancel transpose_one.symm (by
-        simp [MatCongr.transpose_oplus]) (by simp [MatCongr.transpose_oplus])
+    have := MatCongr.trans (matCongrAssocOfMatCongr key)
+      (matCongrOplusRightOfMatCongr _ aux₃) |>
+      oplusLeftCancel transpose_one.symm (by
+        simp [transpose_oplus]) (by simp [transpose_oplus])
+    -- have toReal := MatCongr.trans (matCongrAssocOfMatCongr key)
+    --   (matCongrOplusRightOfMatCongr _ aux₃) |>
+    --   matCongrOfRatCast ℝ
+    -- simp only [ratCast_oplus, RingHom.map_one, ratCast_smul] at toReal
+    -- have toRealCancel := toReal |> oplusLeftCancel transpose_one.symm (by
+    --     simp [transpose_oplus]) (by simp [transpose_oplus])
     nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
-    obtain ⟨x, z, hxz⟩ := (MatCongr.matCongr_two_by_two_condition this) 1 0
+    obtain ⟨x, z, hxz⟩ := (matCongr_two_by_two_condition this) 1 0
     simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
       not_false_eq_true, zero_pow, mul_zero, add_zero] at hxz
     set d : ℚ := (x.den * z.den) ^ 2 with d_def
@@ -158,18 +165,18 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
         (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ) ⊕ₘ
         (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) ∼ₘ
         1 ⊕ₘ (1 ⊕ₘ (-((k : ℚ) - (l : ℚ)) / (l : ℚ)) • 1) := by
-      apply MatCongr.matCongrAssocOfMatCongr
-      apply MatCongr.matCongrOplusRightOfMatCongr
-      rw [←MatCongr.smul_oplus, MatCongr.one_oplus_one, ←Nat.cast_sub l_le_k]
-      apply MatCongr.matCongrOneOfFourDiv cardX hkl'
-    have key := MatCongr.oplusLeftCancel transpose_one.symm (by
-      simp [MatCongr.transpose_oplus]) (by
-      simp [MatCongr.transpose_oplus]) <|
-        MatCongr.trans (brcKey Φ hrep hl hkl |>.symm |>
-        MatCongr.oplusInsertMatCongr
+      apply matCongrAssocOfMatCongr
+      apply matCongrOplusRightOfMatCongr
+      rw [←smul_oplus, one_oplus_one, ←Nat.cast_sub l_le_k]
+      apply matCongrOneOfFourDiv cardX hkl'
+    have key := oplusLeftCancel transpose_one.symm (by
+      simp [transpose_oplus]) (by
+      simp [transpose_oplus]) <|
+        trans (brcKey Φ hrep hl hkl |>.symm |>
+        oplusInsertMatCongr
         (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) aux
     nth_rewrite 3 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at key
-    obtain ⟨y, z, hyz⟩ := (MatCongr.matCongr_two_by_two_condition key) 1 0
+    obtain ⟨y, z, hyz⟩ := (matCongr_two_by_two_condition key) 1 0
     simp only [neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
       not_false_eq_true, zero_pow, mul_zero, add_zero] at hyz
     set d : ℚ := (y.den * z.den) ^ 2 with d_def
