@@ -1,10 +1,26 @@
 import CombinatorialDesign.FisherInequality
 import CombinatorialDesign.MatrixCongruence
+import CombinatorialDesign.SymmetricBIBD
 
 open CombinatorialDesign Matrix Finset
 namespace CombinatorialDesign
 
 variable {ι X} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {v k l : ℕ} (Φ : BIBD X X k l)
+
+theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k := by
+  let i : X := default
+  cases Classical.em (∃ j, i ≠ j) with
+  | inl exists_j =>
+    obtain ⟨j, hij⟩ := exists_j
+    simp_rw [←Φ.hA i, ←card_inter_block_eq_l Φ hij]
+    exact card_le_card inter_subset_left
+  | inr forall_j =>
+    push_neg at forall_j
+    have cardX : Fintype.card X = 1 :=
+      Fintype.card_eq_one_iff.mpr ⟨i, fun _ ↦ forall_j _ |>.symm⟩
+    have k0 : k = 0 := by rw [←Nat.lt_one_iff, ←cardX]; exact Φ.hvk.1
+    subst k0
+    exact Nat.not_succ_le_zero _ Φ.hvk.2 |> False.elim
 
 noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     (hrep : rep Φ = k) (hl : l ≠ 0) (hkl : k ≠ l) :
@@ -33,8 +49,16 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     have : (1 : Matrix (Fin 1) (Fin 1) ℚ) i j = 1 := by
       rw [one_apply, if_pos]; ext; simp only [Fin.val_eq_zero]
     simp [mul_apply, mul_div_cancel₀, hl, this]
-    -- follows from eq_of_symmBIBD Φ
-    sorry
+    field_simp
+    rw [←Rat.sub_eq_add_neg, eq_sub_iff_add_eq, sub_add, ←neg_inj,
+      neg_sub, sub_eq_iff_eq_add', ←neg_inj, neg_sub, neg_add, neg_neg,
+      neg_add_eq_sub, ←mul_sub_one]
+    nth_rewrite 2 [←one_mul l]
+    rw [Nat.cast_mul, ←mul_sub_right_distrib, mul_comm _ (l : ℚ), ←Nat.cast_one]
+    have : 1 ≤ k := k_pos_of_bibd Φ
+    have : 1 ≤ Fintype.card X := NeZero.one_le
+    norm_cast
+    exact eq_of_symmBIBD Φ |>.symm
   {
     A := A'
     inv := by
@@ -52,9 +76,6 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
       exact Ne.isUnit detA' |> invertibleOfIsUnitDet _
     cong := hA'
   }
-
-theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k := by
-  sorry
 
 theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
