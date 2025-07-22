@@ -1,10 +1,11 @@
 import CombinatorialDesign.Isomorphism
+import CombinatorialDesign.MatrixLemmas
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.Data.Multiset.Fintype
 
 open CombinatorialDesign Finset MulAction Quotient
 
-variable {ι X G} [Fintype X] [Fintype ι]
+variable {ι X G : Type*} [Fintype X] [Fintype ι]
   [DecidableEq X] [DecidableEq ι] [Fintype G] [Group G] [MulAction G X]
 
 instance : SMul G (Finset X) where
@@ -100,7 +101,7 @@ noncomputable def A (k₁ k₂ : ℕ) :
     Matrix {O : jOrbits X G // orbitCard O = k₁} {O : jOrbits X G // orbitCard O = k₂} ℤ :=
   Matrix.of (countSubsetOrbit X G · ·)
 
-noncomputable instance {k} : Fintype {O : jOrbits X G // orbitCard O = k} :=
+noncomputable instance {k : ℤ} : Fintype {O : jOrbits X G // orbitCard O = k} :=
   Fintype.ofFinite _
 
 def KramerMesnerCondition {k : ℕ} (l : ℕ)

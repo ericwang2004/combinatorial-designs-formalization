@@ -3,7 +3,7 @@ import CombinatorialDesign.Defs
 open Finset CombinatorialDesign
 namespace CombinatorialDesign
 
-variable {ι X} [Fintype X] [Fintype ι] [DecidableEq X] {k l : ℕ} (Φ : BIBD ι X k l)
+variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] {k l : ℕ} (Φ : BIBD ι X k l)
 
 theorem v_pos_of_bibd (Φ : BIBD ι X k l) : Fintype.card X > 0 :=
   lt_of_le_of_lt Φ.hvk.2 Φ.hvk.1 |> lt_trans Nat.zero_lt_two
@@ -34,7 +34,7 @@ theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : r > 0
 
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
-theorem card_dependent {α β} [Fintype α] [Fintype β]
+theorem card_dependent {α β : Type*} [Fintype α] [Fintype β]
     (P : α → Prop) [DecidablePred P]
     (Q : α → β → Prop) [∀ x, DecidablePred (Q x)]
     {k : ℕ} (hk : ∀ x, P x → #{y | Q x y} = k) :
@@ -70,7 +70,7 @@ theorem card_dependent {α β} [Fintype α] [Fintype β]
       and_true]
     exact ⟨hx, ((g x hx).symm i).property⟩
 
-theorem card_of_swap {α β} [Fintype α] [Fintype β]
+theorem card_of_swap {α β : Type*} [Fintype α] [Fintype β]
     {P : α → β → Prop} [∀ x, DecidablePred (P x)]
     {Q : β → α → Prop} [∀ y, DecidablePred (Q y)]
     (hPQ : ∀ x y, P x y ↔ Q y x) :
@@ -117,9 +117,8 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
-def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ := by
-  let x : X := default
-  exact rep_elem Φ x
+def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ :=
+  rep_elem Φ default
 
 theorem rep_property [Inhabited X] (Φ : BIBD ι X k l) :
     (k - 1) * rep Φ =  l * ((Fintype.card X) - 1) := by

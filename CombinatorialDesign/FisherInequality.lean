@@ -1,72 +1,10 @@
 import CombinatorialDesign.IncidenceMatrix
-import Mathlib.Data.Matrix.Rank
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import CombinatorialDesign.MatrixLemmas
 
 open CombinatorialDesign Matrix Finset
 variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {l r : ℕ}
 
 namespace CombinatorialDesign
-
-/-- ### Matrix Determinant Lemma -/
-theorem det_one_add_column_mul_row {α n} [CommRing α] [Fintype n] [DecidableEq n]
-    (u : Matrix n (Fin 1) α) (v : Matrix (Fin 1) n α) : det (1 + u * v) = 1 + (v * u) 0 0 := by
-  let A := fromBlocks (1 : Matrix n n α) 0 v (1 : Matrix (Fin 1) (Fin 1) α)
-  let B := fromBlocks (1 + u * v) u 0 (1 : Matrix (Fin 1) (Fin 1) α)
-  let C := fromBlocks (1 : Matrix n n α) 0 (-v) (1 : Matrix (Fin 1) (Fin 1) α)
-  let D := fromBlocks (1 : Matrix n n α) u 0 (1 + v * u)
-  have detA : det A = 1 := by
-    simp only [A, det_fromBlocks_zero₁₂, det_one, mul_one]
-  have detB : det B = det (1 + u * v) := by
-    simp only [B, det_fromBlocks_zero₂₁, det_unique, one_apply_eq, mul_one]
-  have detC : det C = 1 := by
-    simp only [C, det_fromBlocks_zero₁₂, det_one, det_unique, one_apply_eq, mul_one]
-  have detD : det D = 1 + (v * u) 0 0 := by
-    simp only [det_fromBlocks_zero₂₁, det_one, det_unique, Fin.default_eq_zero, Fin.isValue,
-      add_apply, one_apply_eq, one_mul, D]
-  have hABCD : A * B * C = D := by
-    simp only [A, B, C, D, fromBlocks_multiply, one_mul, Matrix.mul_zero, add_zero,
-      mul_one, Matrix.one_mul, Matrix.mul_one, Matrix.mul_neg, add_neg_cancel_right,
-      zero_add, fromBlocks_inj, true_and]
-    constructor
-    · rw [Matrix.mul_add, Matrix.mul_one, Matrix.add_mul, neg_add, Matrix.one_mul, add_comm v,
-        add_assoc, add_comm _ (-v), ←add_assoc v, add_neg_cancel, zero_add, ←Matrix.mul_assoc,
-        add_neg_cancel]
-    · rw [add_comm]
-  calc
-    det (1 + u * v) = det A * det B * det C := by rw [detA, detB, detC, one_mul, mul_one]
-    _ = det (A * B * C) := by simp only [det_mul]
-    _ = det D := by rw [hABCD]
-    _ = 1 + (v * u) 0 0 := by rw [detD]
-
-theorem det_ones_add_diagonal {α} (n) [Field α] [Fintype n] [DecidableEq n] (a b : α) (hb : b ≠ 0) :
-    det (a • allOnes n n α + b • 1) = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by
-  let u := allOnes n (Fin 1) α
-  let v := allOnes (Fin 1) n α
-  have expr : a • allOnes n n α + b • 1 = b • (1 + ((a / b) • u) * v) := by
-    ext
-    simp only [add_apply, smul_apply, smul_eq_mul, smul_mul, one_apply, allOnes, of_apply,
-      mul_apply, mul_one, mul_ite, mul_zero, univ_unique, Fin.default_eq_zero, Fin.isValue,
-      sum_singleton, u, v]
-    rw [mul_add, mul_ite, mul_one, mul_zero, add_comm, mul_div_cancel₀ _ hb]
-  have v_mul_u : v * u = Fintype.card n • allOnes (Fin 1) (Fin 1) α := by
-    ext
-    simp only [mul_apply, allOnes, v, u, mul_one, sum_const, card_univ,
-      nsmul_eq_mul, smul_apply, of_apply]
-  have det_expr := (det_one_add_column_mul_row ((a / b) • u) v)
-  simp only [smul_mul, Fin.isValue, Matrix.mul_smul, smul_apply, smul_eq_mul,
-    v_mul_u, allOnes, smul_eq_mul, mul_one, of_apply, ] at det_expr
-  simp only [nsmul_eq_mul, mul_one] at det_expr
-  calc
-    det (a • allOnes n n α + b • 1) = det (b • (1 + (a / b) • (u * v))) := by rw [expr, smul_mul, smul_add]
-    _ = b ^ Fintype.card n * det (1 + (a / b) • (u * v)) := by rw [det_smul]
-    _ = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by rw [det_expr]
-
-theorem rank_ones_add_diagonal {α n} [Field α] [Fintype n] [DecidableEq n]
-    (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
-    rank (a • allOnes n n α + b • 1) = Fintype.card n := by
-  apply rank_of_isUnit
-  rw [isUnit_iff_isUnit_det, det_ones_add_diagonal n a b hb, isUnit_iff_ne_zero]
-  exact mul_ne_zero (pow_ne_zero _ hb) hab
 
 omit [DecidableEq ι]
 theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
@@ -89,7 +27,8 @@ theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
     exact ⟨hx, fun hyp ↦ (mem_compl.mp hy) hyp.2⟩
 
 /-- ### Fisher's Inequality -/
-private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α : Type*) [Field α]
+    [LinearOrder α] [IsStrictOrderedRing α]
     (Φ : nontrivialRPBD ι X l r) : let M := toIncMat α Φ.toDesign
     (Fintype.card ι) ≥ rank M ∧ rank M ≥ (Fintype.card X) := by
   let M := toIncMat α Φ.toDesign
@@ -112,7 +51,8 @@ private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α) [Field α] [LinearOrder α
     · rw [Nat.cast_smul_eq_nsmul]
     · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
 
-theorem rank_eq_v_of_symmNontrivialRPBD (α) [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+theorem rank_eq_v_of_symmNontrivialRPBD (α : Type*) [Field α]
+    [LinearOrder α] [IsStrictOrderedRing α]
     (Φ : nontrivialRPBD X X l r) : rank (toIncMat α Φ.toDesign) = (Fintype.card X) := by
   have ⟨h₁, h₂⟩ := b_ge_rank_ge_v_of_nontrivialRPBD α Φ
   exact le_antisymm h₁ h₂

@@ -4,7 +4,7 @@ import Mathlib.Tactic.Linarith
 open CombinatorialDesign
 namespace CombinatorialDesign
 
-variable {ι ι₁ ι₂ X} [Fintype X] [DecidableEq X]
+variable {ι ι₁ ι₂ X : Type*} [Fintype X] [DecidableEq X]
   [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
   {k l₁ l₂ l : ℕ}
 open Finset

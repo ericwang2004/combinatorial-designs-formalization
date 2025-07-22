@@ -4,32 +4,33 @@ import CombinatorialDesign.MatrixLemmas
 open CombinatorialDesign Matrix Finset Fintype
 namespace CombinatorialDesign
 
-variable {ι X m n} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] [Fintype m] [Fintype n] {k l : ℕ}
+variable {ι X m n : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] [Fintype m] [Fintype n] {k l : ℕ}
   (Φ : BIBD ι X k l)
 
-def toIncMat (α) [One α] [Zero α] (Φ : Design ι X) :
+def toIncMat (α : Type*) [One α] [Zero α] (Φ : Design ι X) :
     Matrix X ι α :=
   of (fun x i ↦ if x ∈ Φ.blocks i then 1 else 0)
 
-def fromIncMat (α) [DecidableEq α] [One α] (M : Matrix X ι α) : Design ι X where
+def fromIncMat (α : Type*) [DecidableEq α] [One α] (M : Matrix X ι α) : Design ι X where
   blocks := fun i ↦ {x | M x i = 1}
 
 omit [DecidableEq ι] in
-theorem col_sum_incmat (α) [DecidableEq α] [AddCommMonoidWithOne α] (j : ι) :
+theorem col_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] (j : ι) :
     ∑ x, (toIncMat α Φ.toDesign) x j = k := by
   simp only [toIncMat, of_apply, Finset.sum_ite_mem, univ_inter, sum_const, nsmul_one]
   rw [Φ.hA]
 
 omit [DecidableEq ι] in
-theorem row_sum_incmat (α) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabited X] (x : X) :
+theorem row_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabited X] (x : X) :
     ∑ j, (toIncMat α Φ.toDesign) x j = rep Φ := by
   simp only [toIncMat, of_apply, sum_boole]
   rw [←rep_eq_rep_elem _ x, rep_elem]
 
-def dual (α) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
+def dual (α : Type*) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
     : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
 
-theorem properties_of_dual {α} [Inhabited X] [DecidableEq α] [One α] [Zero α] [NeZero (R := α) 1] :
+theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
+    [One α] [Zero α] [NeZero (R := α) 1] :
     let Ψ := dual α Φ.toDesign
     (∀ i, #(Ψ.blocks i) = rep Φ) ∧
     (∀ y, #{i | y ∈ Ψ.blocks i} = k) ∧
@@ -48,18 +49,12 @@ theorem properties_of_dual {α} [Inhabited X] [DecidableEq α] [One α] [Zero α
       simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
       exact fun a ↦ hij a.symm
 
-def allOnes (m n α) [One α] : Matrix m n α :=
-  of (fun _ _ ↦ 1)
-
-def isZeroOne {α} [One α] [Zero α] (M : Matrix m n α) : Prop :=
-  ∀ i j, M i j = 0 ∨ M i j = 1
-
-def rpbdCondition (α) [Ring α]
+def rpbdCondition (α : Type*) [Ring α]
     [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
   isZeroOne M ∧
   M * Mᵀ = l • (allOnes _ _ _) + (r - l) • 1
 
-def bibdCondition (α) [Ring α] [LT α] [LE α] [DecidableEq m]
+def bibdCondition (α : Type*) [Ring α] [LT α] [LE α] [DecidableEq m]
     (k l r : α) (M : Matrix m n α) : Prop :=
   (Fintype.card m > k ∧ k ≥ 2) ∧
   (allOnes _ _ α) * M = k • (allOnes (Fin 1) _ α) ∧
@@ -104,7 +99,7 @@ theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRi
         Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.hA, smul_eq_mul]
     · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ) α)
 
-def bbd_of_rpbdCondition {α} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
+def bbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) : BBD ι X l where
   blocks := (fromIncMat _ M).blocks
   balance := by
@@ -123,7 +118,7 @@ def bbd_of_rpbdCondition {α} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [C
     rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
 
 
-def rpbd_of_rpbdCondition {α} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
+def rpbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) :
     RPBD ι X l r := {
   blocks := (fromIncMat _ M).blocks
@@ -142,7 +137,7 @@ def rpbd_of_rpbdCondition {α} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [
     rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
 }
 
-def bibd_of_bibdCondition {α} [DecidableEq α] [Ring α] [LinearOrder α] [IsStrictOrderedRing α]
+def bibd_of_bibdCondition {α : Type*} [DecidableEq α] [Ring α] [LinearOrder α] [IsStrictOrderedRing α]
     {M : Matrix X ι α} (k l r : ℕ) (hM : bibdCondition α k l r M) :
     BIBD ι X k l where
   blocks := (fromIncMat _ M).blocks
