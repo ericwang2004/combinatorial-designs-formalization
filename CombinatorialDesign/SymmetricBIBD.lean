@@ -132,20 +132,61 @@ theorem bruck_ryser_chowla_even [Inhabited X]
   rwa [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne (Nat.sub_le _ _),
     Nat.sub_sub_self vge1, pow_one, ←Nat.cast_sub kl, Rat.isSquare_natCast_iff] at this
 
-theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k := by
-  let i : X := default
-  cases Classical.em (∃ j, i ≠ j) with
-  | inl exists_j =>
-    obtain ⟨j, hij⟩ := exists_j
-    simp_rw [←Φ.hA i, ←card_inter_block_eq_l Φ hij]
-    exact card_le_card inter_subset_left
-  | inr forall_j =>
-    push_neg at forall_j
-    have cardX : Fintype.card X = 1 :=
-      Fintype.card_eq_one_iff.mpr ⟨i, fun _ ↦ forall_j _ |>.symm⟩
-    have k0 : k = 0 := by rw [←Nat.lt_one_iff, ←cardX]; exact Φ.hvk.1
-    subst k0
-    exact Nat.not_succ_le_zero _ Φ.hvk.2 |> False.elim
+theorem l_lt_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l < k := by
+  induction' l with l _
+  · exact k_pos_of_bibd Φ
+  have aux : k - 1 < Fintype.card X - 1 :=
+    Nat.sub_lt_sub_right (k_pos_of_bibd Φ) Φ.hvk.1
+  exact Nat.lt_of_mul_lt_mul_right (calc
+    (l + 1) * (k - 1) < (l + 1) * (Fintype.card X - 1) :=
+      Nat.zero_lt_succ l |> Nat.mul_lt_mul_of_pos_left aux
+    _ = k * (k - 1) := eq_of_symmBIBD Φ)
+
+theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k :=
+  l_lt_k_of_symmBIBD Φ |> Nat.le_of_succ_le
+
+theorem k_sub_l_lt_v_minus_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l)
+    (hyp : l + 2 ≤ k) : k - l < Fintype.card X - k := by
+  have lk_nat : l + 1 ≤ k := l_lt_k_of_symmBIBD Φ
+  have _ := l_le_k_of_symmBIBD Φ
+  suffices (k : ℤ) - l < Fintype.card X - k by
+    have _ := Nat.le_of_succ_le Φ.hvk.1
+    norm_cast at this
+  by_contra h
+  have k1 : 1 ≤ k := k_pos_of_bibd Φ
+  have v1 : 1 ≤ Fintype.card X := NeZero.one_le
+  rw [not_lt, tsub_le_iff_right] at h
+  have aux := calc
+    (k : ℤ) * (k - 1) = l * (Fintype.card X - 1) := by
+      have := (eq_of_symmBIBD Φ).symm
+      norm_cast
+    _ ≤ l * (k - l + k - 1) := by
+      exact Int.mul_le_mul (le_refl _) (Int.sub_le_sub_right h _)
+        (Int.sub_nonneg.mpr (Int.toNat_le.mp (by exact v1)))
+        (Int.natCast_nonneg l)
+  rw [←tsub_nonpos] at aux
+  have : (k : ℤ) * (k - 1) - l * (k - l + k - 1) =
+    (k - l) * (k - l - 1) := by ring
+  rw [this] at aux
+  have kl1 : 0 ≤ (k : ℤ) - l - 1 := by
+    rw [sub_sub, le_sub_iff_add_le, zero_add]
+    norm_cast
+  have kl : 0 ≤ (k : ℤ) - l :=
+    l_le_k_of_symmBIBD Φ |> Int.ofNat_le.mpr |> Int.sub_nonneg_of_le
+  have aux₀ : ((k : ℤ) - l) * (k - l - 1) = 0 :=
+    Int.le_antisymm aux (Int.mul_nonneg kl kl1)
+  rw [mul_eq_zero] at aux₀
+  cases aux₀ with
+  | inl aux₀ =>
+    rw [Int.sub_eq_zero, Nat.cast_inj] at aux₀
+    rw [aux₀, add_le_iff_nonpos_right] at hyp
+    exact Nat.not_succ_le_zero 1 hyp
+  | inr aux₀ =>
+    have : k = l + 1 := by
+      rw [sub_sub, Int.sub_eq_zero] at aux₀
+      norm_cast at aux₀
+    rw [this, add_le_add_iff_left] at hyp
+    simp only [Nat.not_ofNat_le_one] at hyp
 
 noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     (hrep : rep Φ = k) (hl : l ≠ 0) (hkl : k ≠ l) :
@@ -254,12 +295,6 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       (matCongrOplusRightOfMatCongr _ aux₃) |>
       oplusLeftCancel transpose_one.symm (by
         simp [transpose_oplus]) (by simp [transpose_oplus])
-    -- have toReal := MatCongr.trans (matCongrAssocOfMatCongr key)
-    --   (matCongrOplusRightOfMatCongr _ aux₃) |>
-    --   matCongrOfRatCast ℝ
-    -- simp only [ratCast_oplus, RingHom.map_one, ratCast_smul] at toReal
-    -- have toRealCancel := toReal |> oplusLeftCancel transpose_one.symm (by
-    --     simp [transpose_oplus]) (by simp [transpose_oplus])
     nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
     obtain ⟨x, z, hxz⟩ := (matCongr_two_by_two_condition this) 1 0
     simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,

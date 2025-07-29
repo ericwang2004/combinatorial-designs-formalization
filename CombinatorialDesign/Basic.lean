@@ -8,7 +8,7 @@ variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] {k l : ℕ} (Φ
 theorem v_pos_of_bibd (Φ : BIBD ι X k l) : Fintype.card X > 0 :=
   lt_of_le_of_lt Φ.hvk.2 Φ.hvk.1 |> lt_trans Nat.zero_lt_two
 
-theorem k_pos_of_bibd (Φ : BIBD ι X k l) : k > 0 :=
+theorem k_pos_of_bibd (Φ : BIBD ι X k l) : 0 < k :=
   Nat.zero_lt_of_lt Φ.hvk.2
 
 theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X ≥ 2 := by
@@ -31,6 +31,11 @@ theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : r > 0
   rw [←Ψ.regularity x, gt_iff_lt, card_pos]
   use i
   simp only [mem_filter, mem_univ, true_and, hx]
+
+theorem blocks_nonempty (Φ : BIBD ι X k l) (i : ι) :
+    (Φ.blocks i).Nonempty := by
+  rw [←one_le_card, Φ.hA i]
+  exact Nat.one_le_of_lt Φ.hvk.2
 
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
@@ -156,8 +161,7 @@ theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintyp
   rwa [this] at count₁
 
 theorem kb_eq_repv [Inhabited X] : k * (Fintype.card ι) = rep Φ * (Fintype.card X) := by
-  let x : X := Classical.choice instNonemptyOfInhabited
-  rw [blocks_constant _ x, rep_eq_rep_elem]
+  rw [blocks_constant _ (default : X), rep_eq_rep_elem]
 
 theorem b_eq_v_iff_rep_eq_k [Inhabited X] : (Fintype.card ι) = (Fintype.card X) ↔ rep Φ = k := by
   have aux := kb_eq_repv Φ
