@@ -328,6 +328,7 @@ noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
     (hN : Invertible N) (hP : Invertible P)
     (h : (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ N ∼ₘ (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ P) :
     N ∼ₘ P := by
+  classical
   obtain ⟨B,Binv,Bcongr⟩ := h
   let l  : Matrix (Fin 1) (Fin 1) α := submatrix B Sum.inl Sum.inl
   let xT : Matrix (Fin 1) n α       := submatrix B Sum.inl Sum.inr
@@ -449,7 +450,7 @@ noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
         simp only [Fin.isValue, ne_eq, Decidable.not_not] at hl_minus
         by_contra hl_plus
         have hsum0 : (1 - a0) + (1 + a0) = 0 := by
-          simp [hl_minus, hl_plus]
+          simp only [hl_plus, add_zero, hl_minus]
         simp only [Fin.isValue, sub_add_add_cancel] at hsum0
         have htwo : (2 : α) = 0 := by
           simp only [add_self_eq_zero, one_ne_zero] at hsum0
