@@ -42,13 +42,4 @@ structure differenceSet where
   hvk : Fintype.card ι < Fintype.card G ∧ 2 ≤ Fintype.card ι
   balance : ∀ x : G, x ≠ 0 → #{(i, j) : ι × ι | elems i - elems j = x} = l
 
-universe u
-
-theorem path_induction {A : Type u}
-    (C : Π x : A, Π y : A, Eq x y → Type u)
-    (c : Π x : A, C x x (refl x)) :
-    ∃ f : Π x : A, Π y : A, Π p : Eq x y, C x y p,
-    f x x (refl x) = c x := by
-  sorry
-
 end CombinatorialDesign
