@@ -298,7 +298,6 @@ noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
 noncomputable def oplusLeftCancel_zero [CharZero α]
     (h : (0 : Matrix (Fin 0) (Fin 0) α) ⊕ₘ N ∼ₘ 0 ⊕ₘ P) : N ∼ₘ P := by
   obtain ⟨B, B', congB⟩ := h
-  classical
   let e0 : Fin 0 ≃ Empty := by
     exact finZeroEquiv
   let e  : (Fin 0 ⊕ n) ≃ n := by
@@ -329,42 +328,37 @@ noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
     (hN : Invertible N) (hP : Invertible P)
     (h : (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ N ∼ₘ (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ P) :
     N ∼ₘ P := by
-  classical
   obtain ⟨B,Binv,Bcongr⟩ := h
   let l  : Matrix (Fin 1) (Fin 1) α := submatrix B Sum.inl Sum.inl
   let xT : Matrix (Fin 1) n α       := submatrix B Sum.inl Sum.inr
   let y  : Matrix n (Fin 1) α       := submatrix B Sum.inr Sum.inl
   let z  : Matrix n n α             := submatrix B Sum.inr Sum.inr
-  have B_blocks :
-      B = fromBlocks l xT y z := by
+  have B_blocks : B = fromBlocks l xT y z := by
     ext i j
     cases i <;> cases j
     all_goals
     simp [fromBlocks, l, xT, y, z, submatrix_apply]
   have h' : fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 N
-            = fromBlocks l xT y z
-                * fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 P
-                * (fromBlocks l xT y z)ᵀ := by
+          = fromBlocks l xT y z
+            * fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 P
+            * (fromBlocks l xT y z)ᵀ := by
     simpa [matDirectSum, B_blocks] using Bcongr
   have h'' : fromBlocks l xT y z * fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 P
-    = fromBlocks (l * (a • 1)) (xT * P) (y * (a • (1 : Matrix (Fin 1) (Fin 1) α))) (z * P) := by
+          = fromBlocks (l * (a • 1)) (xT * P) (y * (a • (1 : Matrix (Fin 1) (Fin 1) α))) (z * P)
+          := by
     simp [fromBlocks_multiply, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul]
   have BT : (fromBlocks l xT y z)ᵀ = fromBlocks lᵀ yᵀ xTᵀ zᵀ := by
     simp [fromBlocks_transpose]
   have hRHS :
       fromBlocks l xT y z
-        * fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 P
-        * (fromBlocks l xT y z)ᵀ
+      * fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 P
+      * (fromBlocks l xT y z)ᵀ
     = fromBlocks
         (l * (a • 1) * lᵀ + xT * P * xTᵀ)
         (l * (a • 1) * yᵀ + xT * P * zᵀ)
         (y * (a • (1 : Matrix (Fin 1) (Fin 1) α)) * lᵀ + z * P * xTᵀ)
         (y * (a • (1 : Matrix (Fin 1) (Fin 1) α)) * yᵀ + z * P * zᵀ) := by
-    have : (fromBlocks l xT y z * fromBlocks (a • 1) 0 0 P) * (fromBlocks l xT y z)ᵀ
-            =
-          fromBlocks l xT y z * fromBlocks (a • 1) 0 0 P * (fromBlocks l xT y z)ᵀ := by
-      simp [Matrix.mul_assoc]
-    simp [this, BT, fromBlocks_multiply,
+    simp [Matrix.mul_assoc, BT, fromBlocks_multiply,
           Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc]
   have h_blocks :
       fromBlocks (a • (1 : Matrix (Fin 1) (Fin 1) α)) 0 0 N
@@ -564,9 +558,8 @@ noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ 
     have hk : k ≤ Fintype.card m := le_rfl
     let e : m ≃ Fin k := Fintype.equivFinOfCardEq rfl
     let g : Fin k → α := fun i => d (e.symm i)
-    have h' :
-      (Matrix.diagonal g : Matrix (Fin k) (Fin k) α) ⊕ₘ N
-        ∼ₘ (Matrix.diagonal g) ⊕ₘ P := by
+    have h' : (Matrix.diagonal g : Matrix (Fin k) (Fin k) α) ⊕ₘ N
+           ∼ₘ (Matrix.diagonal g) ⊕ₘ P := by
       have := matCongrOplusReindexOfMatCongr e h
       simp only [reindexAlgEquiv_apply, reindex_apply, submatrix_diagonal_equiv] at this
       exact this
@@ -604,9 +597,7 @@ noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ 
             (Matrix.diagonal (fun i : Fin k => g i.succ) ⊕ₘ P)) := by
       have : diagonal (g ∘ e.symm) =
           (diagonal (fun _ : Fin 1 => g 0)) ⊕ₘ (diagonal (fun i : Fin k => g i.succ)) := by
-        classical
-        simp only [matDirectSum]
-        rw [@fromBlocks_diagonal]
+        simp only [matDirectSum, fromBlocks_diagonal]
         refine diagonal_eq_diagonal_iff.mpr ?_
         intro i
         cases i with
@@ -627,8 +618,7 @@ noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ 
           (N' := Matrix.diagonal (fun i : Fin k => g i.succ))
           (O' := P)
           (by
-            rw [@smul_one_eq_diagonal]
-            rw [← this]
+            rw [smul_one_eq_diagonal, ← this]
             exact h₁))
     have inv1 : Invertible (Matrix.diagonal (fun i : Fin k => g i.succ) ⊕ₘ N) := by
       have hdiag : det (diagonal (fun i : Fin k => g i.succ)) ≠ 0 := by
@@ -636,11 +626,9 @@ noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ 
         exact prod_ne_zero_iff.mpr fun a a_1 => g_ne_zero a.succ
       have hNne : det N ≠ 0 := by
         simpa [isUnit_iff_ne_zero] using Matrix.isUnit_det_of_invertible N
-      have hdet :
-          det ((diagonal (fun i : Fin k => g i.succ)) ⊕ₘ N)
-            = det (diagonal (fun i : Fin k => g i.succ)) * det N := by
-        simp only [matDirectSum]
-        simp only [det_fromBlocks_zero₂₁, det_diagonal]
+      have hdet : det ((diagonal (fun i : Fin k => g i.succ)) ⊕ₘ N)
+                = det (diagonal (fun i : Fin k => g i.succ)) * det N := by
+        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal]
       refine ((diagonal fun i : Fin k => g i.succ) ⊕ₘ N).invertibleOfIsUnitDet ?_
       refine Ne.isUnit ?_
       simpa [hdet] using mul_ne_zero hdiag hNne
@@ -653,8 +641,7 @@ noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ 
       have hdet :
           det ((diagonal (fun i : Fin k => g i.succ)) ⊕ₘ P)
             = det (diagonal (fun i : Fin k => g i.succ)) * det P := by
-        simp only [matDirectSum]
-        simp only [det_fromBlocks_zero₂₁, det_diagonal]
+        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal]
       refine ((diagonal fun i : Fin k => g i.succ) ⊕ₘ P).invertibleOfIsUnitDet ?_
       refine Ne.isUnit ?_
       simpa [hdet] using mul_ne_zero hdiag hNne
