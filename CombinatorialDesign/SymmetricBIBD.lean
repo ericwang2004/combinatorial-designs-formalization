@@ -293,8 +293,29 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
         (by rw [Fintype.card_fin]; exact hv') hkl'
     have := MatCongr.trans (matCongrAssocOfMatCongr key)
       (matCongrOplusRightOfMatCongr _ aux₃) |>
-      oplusLeftCancel transpose_one.symm (by
-        simp [transpose_oplus]) (by simp [transpose_oplus])
+      oplusLeftCancel (fun _ => 1) (fun _ => one_ne_zero)
+      (by
+        apply invertibleOfIsUnitDet
+        apply Ne.isUnit
+        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
+          one_apply_eq, neg_smul, Fin.default_eq_zero, Fin.isValue, neg_apply,
+          smul_apply, smul_eq_mul, mul_one, mul_neg, one_mul, ne_eq, neg_eq_zero,
+          Rat.natCast_eq_zero]
+        simpa using hl)
+      (by
+        apply invertibleOfIsUnitDet
+        apply Ne.isUnit
+        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
+          Fin.default_eq_zero, Fin.isValue, smul_apply, one_apply_eq,
+          smul_eq_mul, mul_one, neg_sub, ne_eq, mul_eq_zero,
+          div_eq_zero_iff, Rat.natCast_eq_zero, not_or]
+        constructor
+        . refine sub_ne_zero_of_ne ?_
+          simp only [ne_eq, Rat.natCast_inj, hkl, not_false_eq_true]
+        . constructor
+          . refine sub_ne_zero_of_ne ?_
+            simp only [ne_eq, Rat.natCast_inj, hkl.symm, not_false_eq_true]
+          . exact hl)
     nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
     obtain ⟨x, z, hxz⟩ := (matCongr_two_by_two_condition this) 1 0
     simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
@@ -328,9 +349,28 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       apply matCongrOplusRightOfMatCongr
       rw [←smul_oplus, one_oplus_one, ←Nat.cast_sub l_le_k]
       apply matCongrOneOfFourDiv cardX hkl'
-    have key := oplusLeftCancel transpose_one.symm (by
-      simp [transpose_oplus]) (by
-      simp [transpose_oplus]) <|
+    have key := oplusLeftCancel (fun _ => 1) (fun _ => one_ne_zero)
+        (by
+          apply invertibleOfIsUnitDet
+          apply Ne.isUnit
+          simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
+            Fin.default_eq_zero, Fin.isValue, smul_apply, one_apply_eq, smul_eq_mul,
+            mul_one, neg_smul, neg_apply, mul_neg, ne_eq, neg_eq_zero, mul_eq_zero,
+            Rat.natCast_eq_zero, not_or]
+          constructor
+          . refine sub_ne_zero_of_ne ?_
+            simp only [ne_eq, Rat.natCast_inj, hkl, not_false_eq_true]
+          . exact hl)
+        (by
+          apply invertibleOfIsUnitDet
+          apply Ne.isUnit
+          simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
+            one_apply_eq, neg_sub, Fin.default_eq_zero, Fin.isValue, smul_apply,
+            smul_eq_mul, mul_one, one_mul, ne_eq, div_eq_zero_iff, Rat.natCast_eq_zero, not_or]
+          constructor
+          . refine sub_ne_zero_of_ne ?_
+            simp only [ne_eq, Rat.natCast_inj, hkl.symm, not_false_eq_true]
+          . exact hl) <|
         trans (brcKey Φ hrep hl hkl |>.symm |>
         oplusInsertMatCongr
         (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) aux
