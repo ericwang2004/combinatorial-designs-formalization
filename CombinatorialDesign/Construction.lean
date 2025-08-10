@@ -140,4 +140,55 @@ def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
       · use y.val, ⟨ha.2, y.property⟩
         rfl
 
+variable {G : Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
+
+def fromDifferenceSet (D : differenceSet ι G l) :
+    BIBD G G (Fintype.card ι) l where
+  blocks g := {g + x | x ∈ image D.elems univ}
+  hvk := D.hvk
+  hA _ := by
+    simp only [mem_image, mem_univ, true_and,
+      exists_exists_eq_and, univ_filter_exists]
+    apply card_image_of_injective
+    intro _ _ hij
+    simp only [add_right_inj] at hij
+    exact D.elems_unique hij
+  balance x y hxy := by
+    simp_rw [←D.balance (x - y) (sub_ne_zero_of_ne hxy)]
+    symm
+    apply card_bij (fun ⟨i₁, i₂⟩ _ ↦ x - D.elems i₁)
+    · intro ⟨i₁, i₂⟩ hi
+      simp only [mem_filter, mem_univ, true_and] at hi
+      simp only [mem_image, mem_univ, true_and,
+        exists_exists_eq_and, univ_filter_exists, mem_filter]
+      constructor
+      · use i₁
+        rw [sub_add_cancel]
+      · use i₂
+        rw [sub_add, hi, sub_sub_self]
+    · intro ⟨i₁, i₂⟩ hi ⟨j₁, j₂⟩ hj h
+      rw [sub_right_inj] at h
+      have eq := D.elems_unique h
+      subst eq
+      simp only [mem_filter, mem_univ, true_and] at hj hi
+      rw [←hj, sub_right_inj] at hi
+      rw [D.elems_unique hi]
+    · intro g hg
+      simp only [mem_image, mem_univ, true_and, exists_exists_eq_and,
+        univ_filter_exists, mem_filter] at hg
+      obtain ⟨⟨i₁, rfl⟩, ⟨i₂, rfl⟩⟩ := hg
+      use ⟨i₁, i₂⟩
+      simp
+
+omit [DecidableEq ι] in
+theorem blocks_distinct_of_fromDifferenceSet (D : differenceSet ι G l) :
+    ∀ i j, i ≠ j →
+    (fromDifferenceSet D).blocks i ≠ (fromDifferenceSet D).blocks j := by
+  intro i j hij hblocks
+  have _ : Inhabited G := ⟨i⟩
+  have hl := card_inter_block_eq_l (fromDifferenceSet D) hij
+  rw [hblocks, inter_self, (fromDifferenceSet _).hA j] at hl
+  nth_rewrite 2 [←lt_self_iff_false l, ←hl]
+  exact l_lt_k_of_symmBIBD (fromDifferenceSet D)
+
 end CombinatorialDesign

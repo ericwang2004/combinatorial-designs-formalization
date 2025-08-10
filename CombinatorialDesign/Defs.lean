@@ -3,12 +3,14 @@ import Mathlib.Data.Fintype.Prod
 open Finset
 namespace CombinatorialDesign
 
-variable (ι X : Type*) [Fintype ι] [Fintype X] (k l r : ℕ)
+variable (ι X G : Type*) [Fintype G] [DecidableEq G] [AddGroup G]
+  [Fintype ι] [Fintype X] (k l r : ℕ)
 
 structure Design where
   blocks : ι → Finset X
 
-def reindexDesign {X Y ι ι' : Type*} (e : X ≃ Y) (hι : ι' ≃ ι) (Φ : Design ι X) : Design ι' Y where
+def reindexDesign {X Y ι ι' : Type*} (e : X ≃ Y) (hι : ι' ≃ ι)
+    (Φ : Design ι X) : Design ι' Y where
   blocks i := hι i |> Φ.blocks |> Finset.map e.toEmbedding
 
 variable [DecidableEq X]
@@ -33,5 +35,20 @@ structure nontrivialRPBD extends RPBD ι X l r where
 structure BIBD extends BBD ι X l where
   hvk : k < Fintype.card X ∧ 2 ≤ k
   hA : ∀ i, #(blocks i) = k
+
+structure differenceSet where
+  elems : ι → G
+  elems_unique : Function.Injective elems
+  hvk : Fintype.card ι < Fintype.card G ∧ 2 ≤ Fintype.card ι
+  balance : ∀ x : G, x ≠ 0 → #{(i, j) : ι × ι | elems i - elems j = x} = l
+
+universe u
+
+theorem path_induction {A : Type u}
+    (C : Π x : A, Π y : A, Eq x y → Type u)
+    (c : Π x : A, C x x (refl x)) :
+    ∃ f : Π x : A, Π y : A, Π p : Eq x y, C x y p,
+    f x x (refl x) = c x := by
+  sorry
 
 end CombinatorialDesign
