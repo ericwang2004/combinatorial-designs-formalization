@@ -15,7 +15,7 @@ theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
     _ > 0 := Nat.zero_lt_sub_of_lt hi₁
   rcases card_pos.mp this with ⟨y, hy⟩
   have hxy : x ≠ y := by rintro ⟨_, _⟩; exact (mem_compl.mp hy) hx
-  simp only [←Φ.regularity x, ←Φ.balance _ _ hxy]
+  simp only [←Φ.regularity x, ←balance_RPBD (Φ.toRPBD) _ _ hxy]
   apply card_lt_card
   constructor
   · intro j

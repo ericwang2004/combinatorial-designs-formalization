@@ -136,8 +136,9 @@ noncomputable def bibdOfKMCondition {k : ℕ} (l : ℕ)
     let ms := Finset.sum (Finset.univ : Finset {O : jOrbits X G // orbitCard O = k})
       (fun O => (z 0 O).natAbs • (orbit_blocks O))
     exact (multiset_to_function ms)
-  hvk := hvk'
-  hA := by
+  t_le_k := hvk'.2
+  incomplete := hvk'.1
+  uniform := by
     let ms := Finset.sum (Finset.univ : Finset {O : jOrbits X G // orbitCard O = k})
       (fun O => (z 0 O).natAbs • (orbit_blocks O))
     intro i
@@ -161,7 +162,8 @@ noncomputable def bibdOfKMCondition {k : ℕ} (l : ℕ)
       simpa using h_int
     exact (Int.ofNat.inj this)
   balance := by
-    intro x y hxy
+    intro s hs
+    obtain ⟨x, y, hxy, rfl⟩ := card_eq_two.mp hs
     set ms := Finset.sum (Finset.univ : Finset {O : jOrbits X G // orbitCard O = k})
      (fun O => (z 0 O).natAbs • (orbit_blocks O))
     let pair_set : Finset X := {x, y}
@@ -209,14 +211,10 @@ noncomputable def bibdOfKMCondition {k : ℕ} (l : ℕ)
                 have h1 : (((z 0 a).natAbs • orbit_blocks a).filter (fun S : Finset X ↦ p S)).card =
                     (z 0 a).natAbs * ((orbit_blocks a).filter (fun S : Finset X ↦ p S)).card := by
                   simp [Multiset.filter_nsmul, Multiset.card_nsmul]
-                simp [Finset.sum_insert haT, Multiset.filter_add, Multiset.card_add, h1, hIH,                      -- inductive hypotheses
+                simp [Finset.sum_insert haT, Multiset.filter_add, Multiset.card_add, h1, hIH,
                       mul_comm, mul_left_comm, mul_assoc]
             simpa [p, ms] using h (Finset.univ)
           simpa using congrArg (fun n : ℕ ↦ (n : ℤ)) (Eq.symm h_nat)
-        _ = ↑(#{i | {x, y} ⊆ multiset_to_function (∑ O, (z 0 O).natAbs • orbit_blocks O) i}) := by
+        _ = ↑(#{i | {x, y} ⊆ multiset_to_function ms i}) := by
           congr 1
-          exact card_filter_multiset_eq_card_filter_indexed
-            (∑ O, (z 0 O).natAbs • orbit_blocks O) (Subset {x, y})
-        _ = ↑(#{i | x ∈ multiset_to_function ms i ∧ y ∈ multiset_to_function ms i}) := by
-          simp only [Fin.isValue, Nat.cast_inj, ms, subset_iff, mem_insert,
-            mem_singleton, forall_eq_or_imp, forall_eq]
+          exact card_filter_multiset_eq_card_filter_indexed ms (Subset {x, y})

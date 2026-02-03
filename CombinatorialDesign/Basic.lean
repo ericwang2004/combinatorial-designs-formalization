@@ -6,10 +6,10 @@ namespace CombinatorialDesign
 variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] {k l : ℕ} (Φ : BIBD ι X k l)
 
 theorem v_pos_of_bibd (Φ : BIBD ι X k l) : Fintype.card X > 0 :=
-  lt_of_le_of_lt Φ.hvk.2 Φ.hvk.1 |> lt_trans Nat.zero_lt_two
+  lt_of_le_of_lt Φ.t_le_k Φ.incomplete |> lt_trans Nat.zero_lt_two
 
 theorem k_pos_of_bibd (Φ : BIBD ι X k l) : 0 < k :=
-  Nat.zero_lt_of_lt Φ.hvk.2
+  Nat.zero_lt_of_lt Φ.t_le_k
 
 theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X ≥ 2 := by
   obtain ⟨i, hi₁, hi₂⟩ := Ψ.nontrivial
@@ -34,8 +34,27 @@ theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : r > 0
 
 theorem blocks_nonempty (Φ : BIBD ι X k l) (i : ι) :
     (Φ.blocks i).Nonempty := by
-  rw [←one_le_card, Φ.hA i]
-  exact Nat.one_le_of_lt Φ.hvk.2
+  rw [←one_le_card, Φ.uniform i]
+  exact Nat.one_le_of_lt Φ.t_le_k
+
+theorem balance_BIBD (Φ : BIBD ι X k l) :
+    ∀ x y, x ≠ y → #{i | x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i} = l := by
+  intro x y hxy
+  have := Φ.balance {x , y} (card_pair hxy)
+  simp_rw [← this]
+  congr 1
+  ext i
+  simp only [mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff]
+
+omit [Fintype X] in
+theorem balance_RPBD (Φ : RPBD ι X l r) :
+    ∀ x y, x ≠ y → #{i | x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i} = l := by
+  intro x y hxy
+  have := Φ.balance {x , y} (card_pair hxy)
+  simp_rw [← this]
+  congr 1
+  ext i
+  simp only [mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff]
 
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
@@ -98,7 +117,7 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
   let Q₁ : X → ι → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
-  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := Φ.balance x
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := (balance_BIBD Φ) x
   have count₁ := card_dependent P₁ Q₁ aux₁
   let P₂ : ι → Prop := fun i ↦ x ∈ Φ.blocks i
   let Q₂ : ι → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
@@ -114,7 +133,7 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
       exact ⟨Ne.symm hy.1, hy.2⟩
   have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k - 1 := by
     intro i hi
-    rw [this, card_erase_of_mem hi, Φ.hA i]
+    rw [this, card_erase_of_mem hi, Φ.uniform i]
   have count₂ := card_dependent P₂ Q₂ aux₂
   have : #(filter P₁ univ) = (Fintype.card X) - 1 := by
     rw [filter_ne _ _]
@@ -133,13 +152,13 @@ theorem rep_eq_rep_elem [Inhabited X] : ∀ x, rep_elem Φ x = rep Φ := by
   intro x
   have h := rep_constant Φ x
   rw [←rep_property Φ] at h
-  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
+  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.t_le_k) h
 
 theorem rep_elem_eq_rep_elem : ∀ x y, rep_elem Φ x = rep_elem Φ y := by
   intro x y
   have h := rep_constant Φ x
   rw [←rep_constant Φ y] at h
-  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.hvk.2) h
+  exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.t_le_k) h
 
 theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintype.card X) := by
   intro x
@@ -151,7 +170,7 @@ theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintyp
   let P₂ : ι → Prop := fun _ ↦ True
   let Q₂ : ι → X → Prop := fun i x ↦ x ∈ Φ.blocks i
   have aux₂ : ∀ i, P₂ i → #{y | Q₂ i y} = k :=
-    fun i _ ↦ by simp only [filter_univ_mem, Q₂]; exact Φ.hA i
+    fun i _ ↦ by simp only [filter_univ_mem, Q₂]; exact Φ.uniform i
   have count₂ := card_dependent P₂ Q₂ aux₂
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rw [card_of_swap swap_condition, count₂] at count₁
@@ -176,40 +195,63 @@ theorem b_eq_v_iff_rep_eq_k [Inhabited X] : (Fintype.card ι) = (Fintype.card X)
 theorem eq_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l * ((Fintype.card X) - 1) = k * (k - 1) := by
   rw [←rep_property Φ, (b_eq_v_iff_rep_eq_k Φ).mp rfl, mul_comm]
 
-/-- Useful coercions --/
---A BBD is also a Design
-def BBD_to_Design : (BBD ι X l) → (Design ι X) := BBD.toDesign
+/-! ### Trivial coercions  -/
 
---A RPBD is also a BBD
-def RPBD_to_BBD : (r : ℕ) → (RPBD ι X l r) → (BBD ι X l) := fun _ ↦ RPBD.toBBD
+-- BalancedDesign → Design
+def BalancedDesign_to_Design {t : ℕ} : (BalancedDesign ι X t l) → (Design ι X) :=
+  BalancedDesign.toDesign
 
---Thus, a RPBD is also a Design
-def RPBD_to_Design : (r : ℕ) → (RPBD ι X l r) → (Design ι X) :=
-  fun r ↦ BBD_to_Design ∘ (RPBD_to_BBD r)
+-- BlockDesign → Design
+def BlockDesign_to_Design : (BlockDesign ι X k) → (Design ι X) :=
+  BlockDesign.toDesign
 
---A BIBD is also a BBD
-def BIBD_to_BBD : (BIBD ι X k l) → (BBD ι X l) := BIBD.toBBD
+-- RegularDesign → Design
+def RegularDesign_to_Design {r : ℕ} : (RegularDesign ι X r) → (Design ι X) :=
+  RegularDesign.toDesign
 
---A BIBD is also a Design
-def BIBD_to_Design : (BIBD ι X k l) → (Design ι X) := BBD.toDesign ∘ BIBD.toBBD
+-- RPBD → BalancedDesign
+def RPBD_to_BalancedDesign {r : ℕ} : (RPBD ι X l r) → (BalancedDesign ι X 2 l) :=
+  RPBD.toBalancedDesign
 
---A BIBD is also an RPBD
+-- RPBD → Design
+def RPBD_to_Design {r : ℕ} : (RPBD ι X l r) → (Design ι X) :=
+  fun Φ ↦ Φ.toDesign
+
+-- BIBD → BalancedDesign
+def BIBD_to_BalancedDesign : (BIBD ι X k l) → (BalancedDesign ι X 2 l) :=
+  fun Φ ↦ Φ.toTDesign.toBalancedDesign
+
+-- BIBD → BlockDesign
+def BIBD_to_BlockDesign : (BIBD ι X k l) → (BlockDesign ι X k) :=
+  fun Φ ↦ Φ.toTDesign.toIncompleteDesign.toBlockDesign
+
+-- BIBD → Design
+def BIBD_to_Design : (BIBD ι X k l) → (Design ι X) :=
+  fun Φ ↦ Φ.toDesign
+
+-- nontrivialRPBD → Design
+def nontrivialRPBD_to_Design {r : ℕ} : (nontrivialRPBD ι X l r) → (Design ι X) :=
+  fun Φ ↦ Φ.toDesign
+
+/-! ### Non-trivial coercions (require regularity proof) -/
+
+-- A BIBD is also an RPBD
 def BIBD_to_RPBD [Inhabited X] (Φ : BIBD ι X k l) :
-    (RPBD ι X l (rep Φ)) := by
-  constructor
-  . exact (rep_eq_rep_elem Φ)
+    RPBD ι X l (rep Φ) where
+  blocks := Φ.blocks
+  regularity := fun x => rep_eq_rep_elem Φ x
+  balance := Φ.balance
 
---A nonempty BIBD is also an RPBD
+-- A nonempty BIBD is also a nontrivialRPBD
 def BIBD_to_nontrivialRPBD [Inhabited X] (Φ : BIBD ι X k l) (i : ι) :
-    (nontrivialRPBD ι X l (rep Φ)) where
-  toRPBD := by
-    constructor; swap
-    · exact Φ.toBBD
-    · apply rep_eq_rep_elem
+    nontrivialRPBD ι X l (rep Φ) where
+  blocks := Φ.blocks
+  regularity := fun x => rep_eq_rep_elem Φ x
+  balance := Φ.balance
   nontrivial := by
     use i
-    simp only [Φ.hA]
-    exact ⟨lt_of_le_of_lt' Φ.hvk.2 Nat.zero_lt_two, Φ.hvk.1⟩
-
+    constructor <;> rw [Φ.uniform i]
+    · have := Φ.t_le_k; omega
+    · exact Φ.incomplete
 
 end CombinatorialDesign
