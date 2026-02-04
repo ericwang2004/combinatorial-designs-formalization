@@ -13,43 +13,20 @@ def allOnes (m n α : Type*) [One α] : Matrix m n α :=
 def isZeroOne {m n α : Type*} [One α] [Zero α] (M : Matrix m n α) : Prop :=
   ∀ i j, M i j = 0 ∨ M i j = 1
 
-/-- ### Matrix Determinant Lemma -/
-theorem det_one_add_column_mul_row {α n : Type*} [CommRing α] [Fintype n] [DecidableEq n]
-    (u : Matrix n (Fin 1) α) (v : Matrix (Fin 1) n α) : det (1 + u * v) = 1 + (v * u) 0 0 := by
-  let u' : n → α := fun i => u i 0
-  let v' : n → α := fun j => v 0 j
-  have hu : u = replicateCol (Fin 1) u' := by
-    ext i j
-    fin_cases j
-    simp [u', replicateCol]
-  have hv : v = replicateRow (Fin 1) v' := by
-    ext i j
-    fin_cases i
-    simp [v', replicateRow]
-  simp only [hv, hu, det_one_add_replicateCol_mul_replicateRow, replicateRow_mul_replicateCol_apply]
-
 theorem det_ones_add_diagonal {α : Type*} (n : Type*) [Field α] [Fintype n] [DecidableEq n]
     (a b : α) (hb : b ≠ 0) :
     det (a • allOnes n n α + b • 1) = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by
-  let u := allOnes n (Fin 1) α
-  let v := allOnes (Fin 1) n α
-  have expr : a • allOnes n n α + b • 1 = b • (1 + ((a / b) • u) * v) := by
-    ext
-    simp only [add_apply, smul_apply, smul_eq_mul, smul_mul, one_apply, allOnes, of_apply,
-      mul_apply, mul_one, mul_zero, univ_unique, sum_singleton, u, v]
-    rw [mul_add, mul_ite, mul_one, mul_zero, add_comm, mul_div_cancel₀ _ hb]
-  have v_mul_u : v * u = Fintype.card n • allOnes (Fin 1) (Fin 1) α := by
-    ext
-    simp only [mul_apply, allOnes, v, u, mul_one, sum_const, card_univ,
-      nsmul_eq_mul, smul_apply, of_apply]
-  have det_expr := (det_one_add_column_mul_row ((a / b) • u) v)
-  simp only [smul_mul, Matrix.mul_smul, smul_apply, smul_eq_mul,
-    v_mul_u, allOnes, smul_eq_mul, mul_one, of_apply, ] at det_expr
-  simp only [nsmul_eq_mul, mul_one] at det_expr
-  calc
-    det (a • allOnes n n α + b • 1) = det (b • (1 + (a / b) • (u * v))) := by rw [expr, smul_mul, smul_add]
-    _ = b ^ Fintype.card n * det (1 + (a / b) • (u * v)) := by rw [det_smul]
-    _ = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by rw [det_expr]
+  have key : a • allOnes n n α + b • 1 =
+      b • (1 + replicateCol (Fin 1) (fun _ : n => a / b) * replicateRow (Fin 1) (1 : n → α)) := by
+    ext i j
+    simp only [add_apply, smul_apply, smul_eq_mul, one_apply, allOnes, of_apply,
+      mul_apply, replicateCol_apply, replicateRow_apply, mul_one, univ_unique, sum_singleton,
+      mul_add, mul_ite, mul_zero, Pi.one_apply]
+    field_simp
+    ring
+  rw [key, det_smul, det_one_add_replicateCol_mul_replicateRow, one_dotProduct,
+    sum_const, card_univ, nsmul_eq_mul]
+  ring
 
 theorem rank_ones_add_diagonal {n α : Type*} [Field α] [Fintype n] [DecidableEq n]
     (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
