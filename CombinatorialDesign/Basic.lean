@@ -48,17 +48,14 @@ theorem card_dependent {α β : Type*} [Fintype α] [Fintype β]
     rw [←hk x hx]
     apply Fintype.equivFinOfCardEq
     apply Fintype.card_of_subtype
-    intro y
-    simp only [mem_filter, mem_univ, true_and]
+    simp only [mem_filter, mem_univ, true_and, implies_true]
   let J : Finset (Fin k × α) := Finset.product univ {x | P x}
-  have sizeJ : #J = k * #{x | P x} := by calc
-    _ = _ := by apply Finset.card_product
-    _ = _ := by rw [card_fin k]
+  have sizeJ : #J = k * #{x | P x} := by
+    simp only [product_eq_sprod, card_product, card_univ, Fintype.card_fin, J]
   rw [←sizeJ]
   apply card_bij (fun (x, y) hxy ↦ by
     simp only [mem_filter, mem_univ, true_and] at hxy
-    exact (g x hxy.1 ⟨y, hxy.2⟩, x)
-  )
+    exact (g x hxy.1 ⟨y, hxy.2⟩, x))
   · intro ⟨x, y⟩ hxy
     simp only [mem_filter, mem_univ, true_and] at hxy
     exact mem_product.mpr ⟨by apply mem_univ,
