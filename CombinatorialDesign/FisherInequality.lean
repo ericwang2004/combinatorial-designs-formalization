@@ -8,23 +8,17 @@ namespace CombinatorialDesign
 
 omit [DecidableEq ι]
 theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
-  rcases Φ.nontrivial with ⟨i, hi₀, hi₁⟩
-  rcases card_pos.mp hi₀ with ⟨x, hx⟩
-  have := calc
-    #((Φ.blocks i)ᶜ) = (Fintype.card X) - #(Φ.blocks i) := by rw [card_compl]
-    _ > 0 := Nat.zero_lt_sub_of_lt hi₁
-  rcases card_pos.mp this with ⟨y, hy⟩
-  have hxy : x ≠ y := by rintro ⟨_, _⟩; exact (mem_compl.mp hy) hx
-  simp only [←Φ.regularity x, ←balance_RPBD (Φ.toRPBD) _ _ hxy]
-  apply card_lt_card
-  constructor
-  · intro j
-    simp only [mem_filter, mem_univ, true_and, and_imp]
-    tauto
-  · rw [not_subset]
-    use i
-    simp only [mem_filter, mem_univ, true_and]
-    exact ⟨hx, fun hyp ↦ (mem_compl.mp hy) hyp.2⟩
+  obtain ⟨i, hi₀, hi₁⟩ := Φ.nontrivial
+  obtain ⟨x, hx⟩ := card_pos.mp hi₀
+  obtain ⟨y, hy⟩ := card_pos.mp (card_compl (Φ.blocks i) ▸ Nat.zero_lt_sub_of_lt hi₁)
+  have hxy : x ≠ y := fun h ↦ (mem_compl.mp hy) (h ▸ hx)
+  calc l = #{j | {x, y} ⊆ Φ.blocks j} := (Φ.toRPBD.balance {x, y} (card_pair hxy)).symm
+    _ < #{j | x ∈ Φ.blocks j} := card_lt_card ⟨fun j hj ↦ by
+        simp only [mem_filter, mem_univ, true_and, insert_subset_iff] at hj ⊢; exact hj.1,
+        not_subset.mpr ⟨i, by simp only [mem_filter, mem_univ, true_and]; exact hx, by
+        simp only [mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff, not_and]
+        exact fun _ hy' ↦ (mem_compl.mp hy) hy'⟩⟩
+    _ = r := Φ.regularity x
 
 /-- ### Fisher's Inequality -/
 private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α : Type*) [Field α]

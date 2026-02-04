@@ -37,25 +37,6 @@ theorem blocks_nonempty (Φ : BIBD ι X k l) (i : ι) :
   rw [←one_le_card, Φ.uniform i]
   exact Nat.one_le_of_lt Φ.t_le_k
 
-theorem balance_BIBD (Φ : BIBD ι X k l) :
-    ∀ x y, x ≠ y → #{i | x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i} = l := by
-  intro x y hxy
-  have := Φ.balance {x , y} (card_pair hxy)
-  simp_rw [← this]
-  congr 1
-  ext i
-  simp only [mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff]
-
-omit [Fintype X] in
-theorem balance_RPBD (Φ : RPBD ι X l r) :
-    ∀ x y, x ≠ y → #{i | x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i} = l := by
-  intro x y hxy
-  have := Φ.balance {x , y} (card_pair hxy)
-  simp_rw [← this]
-  congr 1
-  ext i
-  simp only [mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff]
-
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
 theorem card_dependent {α β : Type*} [Fintype α] [Fintype β]
@@ -116,8 +97,8 @@ theorem card_of_swap {α β : Type*} [Fintype α] [Fintype β]
 theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 1) := by
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
-  let Q₁ : X → ι → Prop := fun y i ↦ x ∈ Φ.blocks i ∧ y ∈ Φ.blocks i
-  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := (balance_BIBD Φ) x
+  let Q₁ : X → ι → Prop := fun y i ↦ {x, y} ⊆ Φ.blocks i
+  have aux₁ : ∀ y, P₁ y → #{i | Q₁ y i} = l := fun y hy ↦ Φ.balance {x, y} (card_pair hy)
   have count₁ := card_dependent P₁ Q₁ aux₁
   let P₂ : ι → Prop := fun i ↦ x ∈ Φ.blocks i
   let Q₂ : ι → X → Prop := fun i y ↦ x ≠ y ∧ y ∈ Φ.blocks i
@@ -138,7 +119,10 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
   have : #(filter P₁ univ) = (Fintype.card X) - 1 := by
     rw [filter_ne _ _]
     simp only [mem_univ, card_erase_of_mem, card_univ]
-  have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
+  have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by
+    intro y i
+    simp only [P₁, Q₁, P₂, Q₂, insert_subset_iff, singleton_subset_iff]
+    tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
 def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ :=

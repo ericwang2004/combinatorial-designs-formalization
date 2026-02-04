@@ -45,9 +45,9 @@ theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
     · intro y
       rw [filter_univ_mem, Φ.uniform]
     · intro i j hij
-      rw [filter_inter, univ_inter, filter_filter, balance_BIBD]
-      simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
-      exact fun a ↦ hij a.symm
+      rw [filter_inter, univ_inter, filter_filter]
+      convert Φ.balance {i, j} (card_pair hij) using 2
+      ext x; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
 
 def rpbdCondition (α : Type*) [Ring α]
     [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
@@ -85,8 +85,9 @@ theorem rpbdCondition_of_rpbd (α) [Ring α] :
       rw [sum_congr _ (fun i ↦ if x ∈ Ψ.blocks i then 1 else 0) (fun _ ↦ by simp_all only [reduceIte]),
         sum_boole, Ψ.regularity]
     · simp only [nsmul_eq_mul, mul_one, smul_eq_mul, mul_ite, mul_zero, hxy, reduceIte, add_zero]
-      rw [sum_congr _ (fun i ↦ if y ∈ Ψ.blocks i ∧ x ∈ Ψ.blocks i then 1 else 0)
-        (fun _ ↦ Eq.symm (ite_and _ _ _ _)), sum_boole, (balance_RPBD Ψ) _ _ (Ne.symm hxy)]
+      rw [sum_congr _ (fun i ↦ if {y, x} ⊆ Ψ.blocks i then 1 else 0)
+        (fun _ ↦ by simp only [insert_subset_iff, singleton_subset_iff, ite_and]), sum_boole,
+        Ψ.balance {y, x} (card_pair (Ne.symm hxy))]
 
 omit [DecidableEq ι] in
 theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRing α] [Inhabited X] :
