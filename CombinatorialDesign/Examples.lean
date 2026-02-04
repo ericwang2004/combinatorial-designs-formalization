@@ -30,9 +30,10 @@ def fanoPlane : BIBD (Fin 7) (Fin 7) 3 1 := {
     | 4 => {1, 3, 5}
     | 5 => {2, 3, 6}
     | 6 => {1, 4, 6}
-  hvk := by norm_num
-  hA i := by fin_cases i; all_goals trivial
-  balance x y _ := by fin_cases x, y; all_goals trivial
+  incomplete := by norm_num
+  t_le_k := by norm_num
+  uniform i := by fin_cases i; all_goals trivial
+  balance s hs := by fin_cases s; all_goals trivial
 }
 
 def fanoPlaneIso : DesignIsomorphism fanoPlane.toDesign fanoPlane.toDesign :=

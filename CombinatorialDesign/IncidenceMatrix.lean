@@ -18,7 +18,7 @@ omit [DecidableEq ι] in
 theorem col_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] (j : ι) :
     ∑ x, (toIncMat α Φ.toDesign) x j = k := by
   simp only [toIncMat, of_apply, Finset.sum_ite_mem, univ_inter, sum_const, nsmul_one]
-  rw [Φ.hA]
+  rw [Φ.uniform]
 
 omit [DecidableEq ι] in
 theorem row_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabited X] (x : X) :
@@ -43,11 +43,11 @@ theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
     rw [←rep_eq_rep_elem _ _, rep_elem]
   · constructor
     · intro y
-      rw [filter_univ_mem, Φ.hA]
+      rw [filter_univ_mem, Φ.uniform]
     · intro i j hij
-      rw [filter_inter, univ_inter, filter_filter, Φ.balance]
-      simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
-      exact fun a ↦ hij a.symm
+      rw [filter_inter, univ_inter, filter_filter]
+      convert Φ.balance {i, j} (card_pair hij) using 2
+      ext x; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
 
 def rpbdCondition (α : Type*) [Ring α]
     [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
@@ -85,25 +85,27 @@ theorem rpbdCondition_of_rpbd (α) [Ring α] :
       rw [sum_congr _ (fun i ↦ if x ∈ Ψ.blocks i then 1 else 0) (fun _ ↦ by simp_all only [reduceIte]),
         sum_boole, Ψ.regularity]
     · simp only [nsmul_eq_mul, mul_one, smul_eq_mul, mul_ite, mul_zero, hxy, reduceIte, add_zero]
-      rw [sum_congr _ (fun i ↦ if y ∈ Ψ.blocks i ∧ x ∈ Ψ.blocks i then 1 else 0)
-        (fun _ ↦ Eq.symm (ite_and _ _ _ _)), sum_boole, Ψ.balance _ _ (Ne.symm hxy)]
+      rw [sum_congr _ (fun i ↦ if {y, x} ⊆ Ψ.blocks i then 1 else 0)
+        (fun _ ↦ by simp only [insert_subset_iff, singleton_subset_iff, ite_and]), sum_boole,
+        Ψ.balance {y, x} (card_pair (Ne.symm hxy))]
 
 omit [DecidableEq ι] in
 theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRing α] [Inhabited X] :
     bibdCondition α k l (rep Φ) (toIncMat _ Φ.toDesign) := by
   constructor
-  · simp_all only [Nat.cast_lt, Φ.hvk, Nat.ofNat_le_cast, and_self]
+  · simp_all only [Nat.cast_lt, Φ.incomplete, Φ.t_le_k, Nat.ofNat_le_cast, and_self]
   · constructor
     · ext i j
       simp only [toIncMat, allOnes, mul_apply, of_apply, smul_apply, one_mul,
-        Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.hA, smul_eq_mul]
+        Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.uniform, smul_eq_mul]
     · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ) α)
 
-def bbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
-    {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) : BBD ι X l where
+def pbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
+    {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) : PBD ι X l where
   blocks := (fromIncMat _ M).blocks
   balance := by
-    intro x y hxy
+    intro s hs
+    obtain ⟨x, y, hxy, hs'⟩ := card_eq_two.mp hs
     have hyp := (ext_iff.mpr hM.2) x y
     simp only [allOnes, mul_apply, transpose_apply, add_apply, of_apply, smul_apply,
       one_apply, hxy, reduceIte, add_zero, smul_eq_mul, mul_zero, mul_one] at hyp
@@ -115,14 +117,14 @@ def bbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := �
       · rcases hM.1 y i with hy | hy
         · simp only [hy, mul_zero, zero_ne_one, and_false, ite_false]
         · simp only [hx, hy, one_mul, true_and, ite_true]
-    rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
-
+    rw [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
+    simp only [hs', mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff, hyp]
 
 def rpbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) :
     RPBD ι X l r := {
   blocks := (fromIncMat _ M).blocks
-  balance := (bbd_of_rpbdCondition l r hM).balance
+  balance := (pbd_of_rpbdCondition l r hM).balance
   regularity := by
     intro x
     have hyp := (ext_iff.mpr hM.2) x x
@@ -141,10 +143,7 @@ def bibd_of_bibdCondition {α : Type*} [DecidableEq α] [Ring α] [LinearOrder �
     {M : Matrix X ι α} (k l r : ℕ) (hM : bibdCondition α k l r M) :
     BIBD ι X k l where
   blocks := (fromIncMat _ M).blocks
-  hvk := by
-    obtain ⟨⟩ := hM
-    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast, and_self]
-  hA := by
+  uniform := by
     intro i
     have hyp := (ext_iff.mpr hM.2.1) 0 i
     simp only [allOnes, mul_apply, of_apply, one_mul, smul_apply, smul_eq_mul, mul_one] at hyp
@@ -154,6 +153,12 @@ def bibd_of_bibdCondition {α : Type*} [DecidableEq α] [Ring α] [LinearOrder �
       · simp_all only [zero_ne_one, reduceIte]
       · simp_all only [reduceIte]
     rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
-  balance := (bbd_of_rpbdCondition l r hM.2.2).balance
+  incomplete := by
+    obtain ⟨⟩ := hM
+    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast, and_self]
+  t_le_k :=  by
+    obtain ⟨⟩ := hM
+    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast, and_self]
+  balance := (pbd_of_rpbdCondition l r hM.2.2).balance
 
 end CombinatorialDesign

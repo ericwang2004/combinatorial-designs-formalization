@@ -74,22 +74,25 @@ private theorem vlr {l r : ℕ} (h : r ∣ l * ((Fintype.card X) - 1)) :
 
 def symmNontrivialRPBD_to_symmBIBD {r : ℕ} (hl : l > 0) (Ψ : nontrivialRPBD X X l r) :
     BIBD X X (1 + l * ((Fintype.card X) - 1) / r) l where
-  toBBD := Ψ.toBBD
-  hvk := by
+  toBalancedDesign := Ψ.toBalancedDesign
+  incomplete := by
     have rpos := r_pos_of_nontrivialRPBD Ψ
     have rdiv := r_div_of_symmNontrivialRPBD Ψ
     have hv : (Fintype.card X) - 1 > 0 := v_ge_two_of_nontrivialRPBD Ψ |> Nat.zero_lt_sub_of_lt
-    constructor
-    · rw [←Nat.mul_lt_mul_right rpos, vlr rdiv]
-      calc
-        _ < _ := by
-          rw [add_lt_add_iff_left, Nat.mul_lt_mul_right hv]; exact l_lt_r_of_nontrivialRPBD Ψ
-        _ = _ := by
-          nth_rewrite 1 [←mul_one r]
-          rw [←mul_add, v_ge_one_of_nontrivialRPBD Ψ |> Nat.add_sub_of_le , mul_comm]
-    · rw [←Nat.mul_le_mul_right_iff rpos, vlr rdiv, two_mul, add_le_add_iff_left]
-      exact Nat.le_of_dvd (Nat.mul_pos hl hv) rdiv
-  hA _ := by
+    rw [←Nat.mul_lt_mul_right rpos, vlr rdiv]
+    calc
+      _ < _ := by
+        rw [add_lt_add_iff_left, Nat.mul_lt_mul_right hv]; exact l_lt_r_of_nontrivialRPBD Ψ
+      _ = _ := by
+        nth_rewrite 1 [←mul_one r]
+        rw [←mul_add, v_ge_one_of_nontrivialRPBD Ψ |> Nat.add_sub_of_le , mul_comm]
+  t_le_k := by
+    have rpos := r_pos_of_nontrivialRPBD Ψ
+    have rdiv := r_div_of_symmNontrivialRPBD Ψ
+    have hv : (Fintype.card X) - 1 > 0 := v_ge_two_of_nontrivialRPBD Ψ |> Nat.zero_lt_sub_of_lt
+    rw [←Nat.mul_le_mul_right_iff rpos, vlr rdiv, two_mul, add_le_add_iff_left]
+    exact Nat.le_of_dvd (Nat.mul_pos hl hv) rdiv
+  uniform _ := by
     rw [←r_pos_of_nontrivialRPBD Ψ |> Nat.ne_zero_iff_zero_lt.mpr |> Nat.mul_left_inj,
       r_div_of_symmNontrivialRPBD Ψ |> vlr, bibd_of_symmNontrivialRPBD]
 
@@ -136,7 +139,7 @@ theorem l_lt_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l < k := by
   induction' l with l _
   · exact k_pos_of_bibd Φ
   have aux : k - 1 < Fintype.card X - 1 :=
-    Nat.sub_lt_sub_right (k_pos_of_bibd Φ) Φ.hvk.1
+    Nat.sub_lt_sub_right (k_pos_of_bibd Φ) Φ.incomplete
   exact Nat.lt_of_mul_lt_mul_right (calc
     (l + 1) * (k - 1) < (l + 1) * (Fintype.card X - 1) :=
       Nat.zero_lt_succ l |> Nat.mul_lt_mul_of_pos_left aux
@@ -150,7 +153,7 @@ theorem k_sub_l_lt_v_minus_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l)
   have lk_nat : l + 1 ≤ k := l_lt_k_of_symmBIBD Φ
   have _ := l_le_k_of_symmBIBD Φ
   suffices (k : ℤ) - l < Fintype.card X - k by
-    have _ := Nat.le_of_succ_le Φ.hvk.1
+    have _ := Nat.le_of_succ_le Φ.incomplete
     norm_cast at this
   by_contra h
   have k1 : 1 ≤ k := k_pos_of_bibd Φ
