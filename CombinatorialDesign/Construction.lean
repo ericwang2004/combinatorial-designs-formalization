@@ -59,8 +59,7 @@ def TDesign.sum (Φ₁ : TDesign ι₁ X k t l₁) (Φ₂ : TDesign ι₂ X k t 
   t_le_k := Φ₁.t_le_k
 
 def BIBD.sum (Φ₁ : BIBD ι₁ X k l₁) (Φ₂ : BIBD ι₂ X k l₂) :
-    BIBD (ι₁ ⊕ ι₂) X k (l₁ + l₂) where
-  toTDesign := TDesign.sum Φ₁.toTDesign Φ₂.toTDesign
+    BIBD (ι₁ ⊕ ι₂) X k (l₁ + l₂) := TDesign.sum Φ₁ Φ₂
 
 -------------------------------------
 ------ Complement Constriction ------
