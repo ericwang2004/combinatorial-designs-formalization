@@ -28,7 +28,8 @@ structure RegularDesign extends Design ι X where
 structure BalancedDesign extends Design ι X where
   balance : ∀ s : Finset X, #s = t → #{i | s ⊆ blocks i} = l
 
-structure PBD extends BalancedDesign ι X 2 l where
+/-- Pairwise Balanced Design: 2-wise balanced design -/
+abbrev PBD := BalancedDesign ι X 2 l
 
 /-- Incomplete Design: block size is strictly less than the number of points -/
 structure IncompleteDesign extends BlockDesign ι X k where
@@ -45,7 +46,7 @@ structure TDesign extends IncompleteDesign ι X k, BalancedDesign ι X t l where
   t_le_k : t ≤ k
 
 /-- Balanced Incomplete Block Design: 2-Design -/
-structure BIBD extends TDesign ι X 2 k l where
+abbrev BIBD := TDesign ι X 2 k l
 
 structure differenceSet where
   elems : ι → G

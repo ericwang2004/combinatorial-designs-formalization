@@ -200,11 +200,11 @@ def RPBD_to_Design {r : ℕ} : (RPBD ι X l r) → (Design ι X) :=
 
 -- BIBD → BalancedDesign
 def BIBD_to_BalancedDesign : (BIBD ι X k l) → (BalancedDesign ι X 2 l) :=
-  fun Φ ↦ Φ.toTDesign.toBalancedDesign
+  fun Φ ↦ Φ.toBalancedDesign
 
 -- BIBD → BlockDesign
 def BIBD_to_BlockDesign : (BIBD ι X k l) → (BlockDesign ι X k) :=
-  fun Φ ↦ Φ.toTDesign.toIncompleteDesign.toBlockDesign
+  fun Φ ↦ Φ.toIncompleteDesign.toBlockDesign
 
 -- BIBD → Design
 def BIBD_to_Design : (BIBD ι X k l) → (Design ι X) :=
