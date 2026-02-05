@@ -295,7 +295,7 @@ noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
         Int.cast_smul_eq_zsmul, zsmul_eq_mul, mul_one]
       }
 
-noncomputable def oplusLeftCancel_zero [CharZero α]
+noncomputable def oplusLeftCancel_zero [NeZero (2 : α)]
     (h : (0 : Matrix (Fin 0) (Fin 0) α) ⊕ₘ N ∼ₘ 0 ⊕ₘ P) : N ∼ₘ P := by
   obtain ⟨B, B', congB⟩ := h
   let e0 : Fin 0 ≃ Empty := by
@@ -324,7 +324,7 @@ noncomputable def oplusLeftCancel_zero [CharZero α]
     cong := this
   }
 
-noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
+noncomputable def cancelLeft_1x1_any [NeZero (2 : α)] (a : α)
     (hN : Invertible N) (hP : Invertible P)
     (h : (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ N ∼ₘ (a • (1 : Matrix (Fin 1) (Fin 1) α)) ⊕ₘ P) :
     N ∼ₘ P := by
@@ -453,9 +453,10 @@ noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
           simp only [hl_plus, add_zero, hl_minus]
         simp only [Fin.isValue, sub_add_add_cancel] at hsum0
         have htwo : (2 : α) = 0 := by
-          simp only [add_self_eq_zero, one_ne_zero] at hsum0
+          rw [← hsum0]
+          exact Eq.symm one_add_one_eq_two
         have : (2 : α) ≠ 0 := by
-          exact_mod_cast (by decide : (2 : ℕ) ≠ 0)
+          exact two_ne_zero
         exact this htwo
       refine ⟨-((1 : α) + a0)⁻¹, ?_⟩
       calc
@@ -547,7 +548,7 @@ noncomputable def cancelLeft_1x1_any [CharZero α] (a : α)
     exact ne_zero_pow (Nat.zero_ne_add_one 1).symm this
   exact { A := S, inv := hS, cong := bottom }
 
-noncomputable def oplusLeftCancel [CharZero α] (d : m → α) (d_ne_zero : ∀ i, d i ≠ 0)
+noncomputable def oplusLeftCancel [NeZero (2 : α)] (d : m → α) (d_ne_zero : ∀ i, d i ≠ 0)
     (hN : Invertible N) (hP : Invertible P)
     (h : Matrix.diagonal d ⊕ₘ N ∼ₘ Matrix.diagonal d ⊕ₘ P) : N ∼ₘ P := by
   suffices H :
