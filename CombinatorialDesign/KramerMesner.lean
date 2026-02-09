@@ -54,7 +54,7 @@ instance : MulAction G (Finset X) where
   one_smul S := by ext x; simp [mem_smul_subset]
   mul_smul g h S := by
     ext x
-    simp only [mem_smul_subset, exists_exists_and_eq_and, mul_smul, implies_true]
+    simp only [mem_smul_subset, exists_exists_and_eq_and, mul_smul]
 
 /-! ## Orbits of Subsets
 
@@ -275,10 +275,10 @@ noncomputable def tDesignOfKMCondition (t k : ℕ) (l : ℕ)
       (fun O => (z 0 O).natAbs • (orbit_blocks O))
     intro i
     have hi_mem : (i.fst : Finset X) ∈ ms := Multiset.coe_mem
-    rcases (Finset.mem_sum
+    rcases (Multiset.mem_sum
             (s := (Finset.univ : Finset {O : jOrbits X G // orbitCard O = k}))
-            (f := fun O ↦ (z 0 O).natAbs • orbit_blocks O)
-            (b := (i.fst : Finset X))).mp hi_mem with ⟨O, -, hO⟩
+            (m := fun O ↦ (z 0 O).natAbs • orbit_blocks O)
+            (a := (i.fst : Finset X))).mp hi_mem with ⟨O, -, hO⟩
     have hS_in : (i.fst : Finset X) ∈ orbit_blocks O := Multiset.mem_of_mem_nsmul hO
     have hquot : (⟦(i.fst : Finset X)⟧ : jOrbits X G) = O.val := ((Multiset.mem_filter).1 hS_in).2
     have h_eq : orbitCard (⟦(i.fst : Finset X)⟧ : jOrbits X G) = (k : ℤ) := by
@@ -303,7 +303,7 @@ noncomputable def tDesignOfKMCondition (t k : ℕ) (l : ℕ)
         congr 1; ext O
         rw [Int.natAbs_of_nonneg (hz O)]; congr 1
         unfold countSubsetOrbit; rw [Quotient.lift_mk]; unfold orbit_blocks
-        simp only [Multiset.filter_filter, Nat.cast_inj, ← Finset.filter_val, card_val]
+        simp only [Nat.cast_inj, ← Finset.filter_val, card_val]
         congr 1; ext a; simp only [mem_filter, mem_univ, true_and]
       _ = ↑(ms.filter (fun S => s ⊆ S)).card := by
         classical
@@ -338,7 +338,7 @@ lemma orbit_blocks_map_smul (g : G) {k : ℤ} (O : {O : jOrbits X G // orbitCard
     exact Multiset.count_map_eq_count' (f := (g • · : Finset X → Finset X))
       (Multiset.filter (fun S => ⟦S⟧ = O.val) Finset.univ.val) (MulAction.injective g) (g⁻¹ • S)
   rw [h_count]
-  simp only [Multiset.count_filter, Finset.mem_val, Finset.mem_univ, if_true,
+  simp only [Multiset.count_filter,
     Quotient.sound (s := orbitRel G (Finset X)) ⟨g⁻¹, rfl⟩,
     Multiset.count_eq_one_of_mem Finset.univ.nodup (Finset.mem_univ _)]
 
@@ -352,7 +352,7 @@ theorem tDesignOfKMCondition_isGInvariant (t k : ℕ) (l : ℕ)
     let D := tDesignOfKMCondition X G t k l hvk' z hz km
     IsGInvariant ms.ToType X G D.toIncompleteDesign.toBlockDesign.toDesign := by
   intro ms D g
-  simp only [IsGInvariant, tDesignOfKMCondition, D]
+  simp only [tDesignOfKMCondition, D]
   have h_lhs : (Finset.univ : Finset ms.ToType).val.map (multiset_to_function ms) = ms :=
     Multiset.map_univ_coe ms
   have h_rhs : (Finset.univ : Finset ms.ToType).val.map (fun i => g • multiset_to_function ms i) =
@@ -454,7 +454,7 @@ theorem kmConditionOfGInvariantDesign {t k l : ℕ} (D : TDesign ι X t k l)
     KramerMesnerCondition X G t k l (solutionFromDesign ι X G D hD) := by
   unfold KramerMesnerCondition
   ext i Ot
-  simp only [Fin.isValue, Matrix.mul_apply, Matrix.smul_apply, nsmul_eq_mul, allOnes,
+  simp only [Matrix.mul_apply, Matrix.smul_apply, nsmul_eq_mul, allOnes,
     Matrix.of_apply, mul_one]
   obtain ⟨T, hT⟩ := Quotient.exists_rep Ot.val
   have hTOt : Ot.val = ⟦T⟧ := hT.symm

@@ -1,6 +1,7 @@
 import CombinatorialDesign.FisherInequality
 import CombinatorialDesign.MatrixLemmas
 import CombinatorialDesign.MatrixCongruence
+import Mathlib.Algebra.CharP.Invertible
 
 open CombinatorialDesign Matrix Finset MatCongr
 namespace CombinatorialDesign
@@ -14,7 +15,7 @@ theorem card_inter_block_eq_l
     rank_eq_v_of_symmNontrivialRPBD ℚ (BIBD_to_nontrivialRPBD Φ (by exact i))
   have MtM i j : (Mᵀ * M) i j = #(Φ.blocks i ∩ Φ.blocks j) := by
     simp only [mul_apply, transpose_apply, M, toIncMat, of_apply, mul_ite, mul_one, mul_zero,
-      sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, Nat.cast_inj, inter_comm]
+      sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, inter_comm]
   have MMt : M * Mᵀ = (l : ℚ) • allOnes X X _ + ((rep Φ : ℚ) - l) • 1 :=
     (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
   have MMtM : M * (Mᵀ * M) = M * (of (if · = · then k else l) : Matrix X X ℚ) := by
@@ -27,7 +28,7 @@ theorem card_inter_block_eq_l
       (b_eq_v_iff_rep_eq_k Φ).mp rfl]
     group
   have := ext_iff.mpr (eq_of_full_rank_mul_eq (Equiv.refl X) rankM MMtM) i j
-  simp_all only [MtM, of_apply, inej, ite_false, Nat.cast_inj]
+  simp_all only [of_apply, ite_false, Nat.cast_inj]
 
 theorem bibd_of_symmNontrivialRPBD  {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
     ∀ i, #(Ψ.blocks i) * r = r + l * ((Fintype.card X) - 1) := by
@@ -119,7 +120,7 @@ theorem bruck_ryser_chowla_even [Inhabited X]
     rw [MMt, det_ones_add_diagonal, repk]
     · calc
         ((k : ℚ) - l) ^ v * (1 + l / (k - l) * v) = (k - l) ^ v * (((k - l) + l * v) / (k - l)) := by
-          congr; rw [div_mul_eq_mul_div, ←div_self kl_cast_ne, div_add_div_same]
+          congr; rw [div_mul_eq_mul_div, ←div_self kl_cast_ne, add_div]
         _ = (k - l) ^ v * ((k + l * (v - 1)) / (k - l)) := by congr 2; group
         _ = (k - l) ^ v * (k ^ 2 / (k - l)) := by
           congr; rw [lv1_cast]; group
@@ -130,14 +131,16 @@ theorem bruck_ryser_chowla_even [Inhabited X]
   rw [det_mul, det_transpose] at detMMt
   have square : IsSquare (((k : ℚ) - l) ^ (v - 1)) := by
     use det M / k
-    field_simp [detMMt]
+    field_simp
+    simp_rw [pow_two, detMMt]
   have := IsSquare.div (Even.isSquare_pow hv ((k : ℚ) - l)) square
   rwa [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne (Nat.sub_le _ _),
     Nat.sub_sub_self vge1, pow_one, ←Nat.cast_sub kl, Rat.isSquare_natCast_iff] at this
 
 theorem l_lt_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l < k := by
-  induction' l with l _
-  · exact k_pos_of_bibd Φ
+  cases l with
+  | zero => exact k_pos_of_bibd Φ
+  | succ l =>
   have aux : k - 1 < Fintype.card X - 1 :=
     Nat.sub_lt_sub_right (k_pos_of_bibd Φ) Φ.incomplete
   exact Nat.lt_of_mul_lt_mul_right (calc
@@ -206,7 +209,7 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
   have hA' : E = A' * D * A'ᵀ := by
     simp only [A', D, E, matDirectSum, fromBlocks_multiply, fromBlocks_transpose,
       mul_one, Matrix.mul_zero, add_zero, neg_smul, Matrix.mul_neg, Matrix.mul_smul,
-      Matrix.mul_one, zero_add, Matrix.neg_mul, smul_mul, mul_neg, Algebra.mul_smul_comm, smul_of,
+      Matrix.mul_one, zero_add, mul_neg, Algebra.mul_smul_comm, smul_of,
       neg_of, neg_sub, fromBlocks_inj, AAt, allOnes]
     constructor
     · ext; simp [mul_apply, hrep]
@@ -218,16 +221,12 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     have : (1 : Matrix (Fin 1) (Fin 1) ℚ) i j = 1 := by
       rw [one_apply, if_pos]; ext; simp only [Fin.val_eq_zero]
     simp [mul_apply, mul_div_cancel₀, hl, this]
+    have hk1 : 1 ≤ k := k_pos_of_bibd Φ
+    have hv1 : 1 ≤ Fintype.card X := NeZero.one_le
+    have hsymm_cast : (l : ℚ) * ((Fintype.card X : ℚ) - 1) = (k : ℚ) * ((k : ℚ) - 1) := by
+      exact_mod_cast (eq_of_symmBIBD Φ)
     field_simp
-    rw [←Rat.sub_eq_add_neg, eq_sub_iff_add_eq, sub_add, ←neg_inj,
-      neg_sub, sub_eq_iff_eq_add', ←neg_inj, neg_sub, neg_add, neg_neg,
-      neg_add_eq_sub, ←mul_sub_one]
-    nth_rewrite 2 [←one_mul l]
-    rw [Nat.cast_mul, ←mul_sub_right_distrib, mul_comm _ (l : ℚ), ←Nat.cast_one]
-    have : 1 ≤ k := k_pos_of_bibd Φ
-    have : 1 ≤ Fintype.card X := NeZero.one_le
-    norm_cast
-    exact eq_of_symmBIBD Φ |>.symm
+    linarith
   {
     A := A'
     inv := by
@@ -265,7 +264,7 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
   have AAt : A * Aᵀ = (l : ℚ) • allOnes X X _ + ((rep Φ : ℚ) - l) • 1 :=
     (rpbdCondition_of_rpbd (α := ℚ) (BIBD_to_RPBD Φ)).2
   have hkl' : 0 < Int.ofNat (k - l) := by
-    rw [Int.ofNat_eq_coe, Nat.cast_pos']
+    rw [Int.ofNat_eq_natCast, Nat.cast_pos']
     exact Nat.lt_of_le_of_ne l_le_k hkl.symm |> Nat.zero_lt_sub_of_lt
   cases Nat.even_or_odd u with
   | inl hu =>
@@ -296,29 +295,9 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
         (by rw [Fintype.card_fin]; exact hv') hkl'
     have := MatCongr.trans (matCongrAssocOfMatCongr key)
       (matCongrOplusRightOfMatCongr _ aux₃) |>
-      oplusLeftCancel (fun _ => 1) (fun _ => one_ne_zero)
-      (by
-        apply invertibleOfIsUnitDet
-        apply Ne.isUnit
-        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
-          one_apply_eq, neg_smul, Fin.default_eq_zero, Fin.isValue, neg_apply,
-          smul_apply, smul_eq_mul, mul_one, mul_neg, one_mul, ne_eq, neg_eq_zero,
-          Rat.natCast_eq_zero]
-        simpa using hl)
-      (by
-        apply invertibleOfIsUnitDet
-        apply Ne.isUnit
-        simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
-          Fin.default_eq_zero, Fin.isValue, smul_apply, one_apply_eq,
-          smul_eq_mul, mul_one, neg_sub, ne_eq, mul_eq_zero,
-          div_eq_zero_iff, Rat.natCast_eq_zero, not_or]
-        constructor
-        . refine sub_ne_zero_of_ne ?_
-          simp only [ne_eq, Rat.natCast_inj, hkl, not_false_eq_true]
-        . constructor
-          . refine sub_ne_zero_of_ne ?_
-            simp only [ne_eq, Rat.natCast_inj, hkl.symm, not_false_eq_true]
-          . exact hl)
+      oplusLeftCancel
+        (isSymm_oplus isSymm_one (isSymm_one.smul _))
+        (isSymm_oplus (isSymm_one.smul _) (isSymm_one.smul _))
     nth_rewrite 1 [←one_smul ℚ (1 : Matrix (Fin 1) (Fin 1) ℚ)] at this
     obtain ⟨x, z, hxz⟩ := (matCongr_two_by_two_condition this) 1 0
     simp only [one_mul, neg_mul, one_pow, mul_one, neg_sub, ne_eq, OfNat.ofNat_ne_zero,
@@ -327,10 +306,10 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     have hxz' := congrArg (HMul.hMul d) (add_eq_of_eq_add_neg hxz.symm).symm
     have hd₁ : d * x ^ 2 = (x.num * z.den) ^ 2 := by
       rw [d_def, mul_pow, mul_pow]; nth_rewrite 2 [←Rat.num_div_den x]
-      field_simp; group
+      field_simp
     have hd₂ : z ^ 2 * d = (x.den * z.num) ^ 2 := by
       rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den z]
-      field_simp; group
+      field_simp
     rw [hd₁, mul_add, mul_comm d, mul_comm d, mul_assoc, hd₂, d_def] at hxz'
     norm_cast at hxz'
     use x.num * z.den, x.den * z.den, x.den * z.num
@@ -352,28 +331,9 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
       apply matCongrOplusRightOfMatCongr
       rw [←smul_oplus, one_oplus_one, ←Nat.cast_sub l_le_k]
       apply matCongrOneOfFourDiv cardX hkl'
-    have key := oplusLeftCancel (fun _ => 1) (fun _ => one_ne_zero)
-        (by
-          apply invertibleOfIsUnitDet
-          apply Ne.isUnit
-          simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
-            Fin.default_eq_zero, Fin.isValue, smul_apply, one_apply_eq, smul_eq_mul,
-            mul_one, neg_smul, neg_apply, mul_neg, ne_eq, neg_eq_zero, mul_eq_zero,
-            Rat.natCast_eq_zero, not_or]
-          constructor
-          . refine sub_ne_zero_of_ne ?_
-            simp only [ne_eq, Rat.natCast_inj, hkl, not_false_eq_true]
-          . exact hl)
-        (by
-          apply invertibleOfIsUnitDet
-          apply Ne.isUnit
-          simp only [matDirectSum, det_fromBlocks_zero₂₁, det_diagonal, det_unique,
-            one_apply_eq, neg_sub, Fin.default_eq_zero, Fin.isValue, smul_apply,
-            smul_eq_mul, mul_one, one_mul, ne_eq, div_eq_zero_iff, Rat.natCast_eq_zero, not_or]
-          constructor
-          . refine sub_ne_zero_of_ne ?_
-            simp only [ne_eq, Rat.natCast_inj, hkl.symm, not_false_eq_true]
-          . exact hl) <|
+    have key := oplusLeftCancel
+        (isSymm_oplus (isSymm_one.smul _) (isSymm_one.smul _))
+        (isSymm_oplus isSymm_one (isSymm_one.smul _)) <|
         trans (brcKey Φ hrep hl hkl |>.symm |>
         oplusInsertMatCongr
         (((k : ℚ) - l) • (1 : Matrix (Fin 1) (Fin 1) ℚ))) aux
@@ -385,10 +345,10 @@ theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     have hyz' := congrArg (HMul.hMul d) hyz.symm
     have hd₁ : y ^ 2 * d = (y.num * z.den) ^ 2 := by
       rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den y]
-      field_simp; group
+      field_simp
     have hd₂ : z ^ 2 * d = (y.den * z.num) ^ 2 := by
       rw [d_def, mul_pow, mul_pow]; nth_rewrite 1 [←Rat.num_div_den z]
-      field_simp; group
+      field_simp
     rw [mul_one, mul_add, mul_comm d, mul_comm d, neg_mul, mul_assoc,
       mul_assoc, hd₁, hd₂, d_def] at hyz'
     norm_cast at hyz'
