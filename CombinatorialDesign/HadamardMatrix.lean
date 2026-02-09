@@ -43,8 +43,8 @@ theorem isHadamard_of_scaleRow {M : Matrix ι ι α} (hM : isHadamard M) (i₀ :
     rcases eq_or_ne i j with hij | hij
     · subst hij
       rcases eq_or_ne i i₀ with hi₀ | hi₀
-      · simp only [hi₀, ↓reduceIte, neg_mul, one_mul, mul_neg, neg_neg, mul_one, mprod', if_pos rfl]
-      · simp only [if_neg hi₀, mprod', if_pos rfl]
+      · simp only [hi₀, ↓reduceIte, neg_mul, one_mul, mul_neg, neg_neg, mprod']
+      · simp only [if_neg hi₀, mprod']
     · simp only [if_neg hij]
       rcases eq_or_ne i i₀ with hi₀ | hi₀
       · simp only [if_pos hi₀]; rw [← hi₀]; simp only [if_neg hij.symm]

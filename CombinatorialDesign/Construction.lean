@@ -93,14 +93,13 @@ def BIBD.complement [Inhabited X] (Φ : BIBD ι X k l) (hyp : (Fintype.card X) -
     have h := Φ.uniform i
     simpa [← h] using card_compl (Φ.blocks i)
   balance s hs := by
-    simp only [Pi.compl_apply, mem_compl]
+    simp only [Pi.compl_apply]
     obtain ⟨x, y, hxy, rfl⟩ := card_eq_two.mp hs
     simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq,
-      mem_compl, mem_filter, mem_univ, true_and]
+      mem_compl]
     have hrep := rep_eq_rep_elem Φ
     have hbal := Φ.balance {x, y} (card_pair hxy)
-    simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq,
-      mem_filter, mem_univ, true_and] at hbal
+    simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq] at hbal
     let A : Finset ι := univ.filter (x ∈ Φ.blocks ·)
     let B : Finset ι := univ.filter (y ∈ Φ.blocks ·)
     have hA : #A = rep Φ := hrep x
@@ -133,15 +132,14 @@ def derived [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hl : 2 ≤ l) :
     have hi₀S₀ : i₀ ∈ S₀ := by simp only [S₀, mem_filter, mem_univ, true_and, x.property, y.property]
     have hS₀ : #S₀ = l := by
       have := Φ.balance {(x : X), (y : X)} (card_pair (Subtype.coe_ne_coe.mpr hxy))
-      simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq,
-        mem_filter, mem_univ, true_and] at this ⊢
+      simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq] at this ⊢
       exact this
     have key : #{i : {i // i ≠ i₀} | (x : X) ∈ Φ.blocks i ∧ (y : X) ∈ Φ.blocks i} = l - 1 := by
       have : #{i : {i // i ≠ i₀} | (x : X) ∈ Φ.blocks i ∧ (y : X) ∈ Φ.blocks i} = #(S₀.erase i₀) := by
         apply card_bij (fun i _ => i.val)
         · intro i hi; simp only [mem_filter, mem_univ, true_and] at hi
           simp only [mem_erase, ne_eq, i.property, not_false_eq_true, S₀, mem_filter, mem_univ, hi, and_self]
-        · intro i _ j _ hij; exact Subtype.eq hij
+        · intro i _ j _ hij; exact Subtype.ext hij
         · intro b hb; simp only [S₀, mem_erase, mem_filter, mem_univ, true_and] at hb
           exact ⟨⟨b, hb.1⟩, by simp [hb.2], rfl⟩
       rw [this, card_erase_of_mem hi₀S₀, hS₀]
@@ -176,7 +174,7 @@ def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
   uniform i := by
     have : Inhabited X := ⟨i₀⟩
     simp only [card_map, card_attach]
-    rw [←sdiff_inter_self_left, card_sdiff inter_subset_left,
+    rw [←sdiff_inter_self_left, card_sdiff_of_subset inter_subset_left,
       Φ.uniform, card_inter_block_eq_l]
     exact i.property
   balance s hs := by
@@ -187,15 +185,14 @@ def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
       intro ⟨hx, _⟩; exact x.property hx
     have hS₀ : #S₀ = l := by
       have := Φ.balance {(x : X), (y : X)} (card_pair (Subtype.coe_ne_coe.mpr hxy))
-      simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq,
-        mem_filter, mem_univ, true_and] at this ⊢
+      simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq] at this ⊢
       exact this
     have key : #{i : {i // i ≠ i₀} | (x : X) ∈ Φ.blocks i ∧ (y : X) ∈ Φ.blocks i} = l := by
       have : #{i : {i // i ≠ i₀} | (x : X) ∈ Φ.blocks i ∧ (y : X) ∈ Φ.blocks i} = #S₀ := by
         apply card_bij (fun i _ => i.val)
         · intro i hi; simp only [mem_filter, mem_univ, true_and] at hi
           simp only [S₀, mem_filter, mem_univ, hi, and_self]
-        · intro i _ j _ hij; exact Subtype.eq hij
+        · intro i _ j _ hij; exact Subtype.ext hij
         · intro b hb; simp only [S₀, mem_filter, mem_univ, true_and] at hb
           have hb' : b ≠ i₀ := fun h => hi₀S₀ (by simp only [S₀, mem_filter, mem_univ, true_and]; subst h; exact hb)
           exact ⟨⟨b, hb'⟩, by simp [hb], rfl⟩
@@ -232,13 +229,12 @@ def fromDifferenceSet (D : differenceSet ι G l) :
   balance s hs := by
     obtain ⟨x, y, hxy, rfl⟩ := card_eq_two.mp hs
     simp only [subset_iff, mem_insert, mem_singleton, forall_eq_or_imp, forall_eq,
-      mem_image, mem_univ, true_and, exists_exists_eq_and, univ_filter_exists,
-      mem_filter]
+      mem_image, mem_univ, true_and, exists_exists_eq_and, univ_filter_exists]
     simp_rw [←D.balance (x - y) (sub_ne_zero_of_ne hxy)]
     symm
     apply card_bij (fun ⟨i, j⟩ _ => x - D.elems i)
     · intro ⟨i, j⟩ hij
-      simp only [mem_filter, mem_univ, true_and, Prod.mk.injEq] at hij ⊢
+      simp only [mem_filter, mem_univ, true_and] at hij ⊢
       refine ⟨⟨i, sub_add_cancel x _⟩, ⟨j, ?_⟩⟩
       have : D.elems j = D.elems i - (x - y) := by rw [←hij]; abel
       rw [this]; abel
@@ -255,7 +251,7 @@ def fromDifferenceSet (D : differenceSet ι G l) :
       simp only [mem_filter, mem_univ, true_and] at hg
       obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := hg
       use ⟨i, j⟩
-      simp only [mem_filter, mem_univ, true_and, Prod.mk.injEq, exists_prop]
+      simp only [mem_filter, mem_univ, true_and, exists_prop]
       refine ⟨?_, ?_⟩
       · rw [←hi, ←hj]; abel
       · rw [←hi]; abel

@@ -93,7 +93,7 @@ def isoOfPerm {α : Type*} [One α] [Zero α] [NeZero (R := α) 1]
     have hyp i j := ite_eq_ite'.mp (hyp i j)
     intro; ext
     constructor <;> intro hy <;>
-      simp only [Function.comp_apply, mem_image] at hy ⊢
+      simp only [mem_image] at hy ⊢
     · obtain ⟨_, _, rfl⟩ := hy
       rwa [←hyp]
     · exact ⟨γ.symm _, by rwa [hyp, γ.apply_symm_apply], γ.apply_symm_apply _⟩

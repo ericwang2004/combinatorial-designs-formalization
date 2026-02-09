@@ -35,9 +35,8 @@ theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
     (∀ i, #(Ψ.blocks i) = rep Φ) ∧
     (∀ y, #{i | y ∈ Ψ.blocks i} = k) ∧
     (∀ i j, i ≠ j → #(Ψ.blocks i ∩ Ψ.blocks j) = l) := by
-  simp only [reindex_apply, Equiv.refl_symm, Equiv.coe_refl, submatrix_apply, id_eq,
-    transpose_apply, of_apply, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not,
-    mem_filter, mem_univ, true_and, ne_eq, dual, fromIncMat, toIncMat]
+  simp only [transpose_apply, of_apply, ite_eq_left_iff, zero_ne_one, imp_false,
+    Decidable.not_not, mem_filter, mem_univ, true_and, ne_eq, dual, fromIncMat, toIncMat]
   constructor
   · intro i
     rw [←rep_eq_rep_elem _ _, rep_elem]
@@ -81,10 +80,10 @@ theorem rpbdCondition_of_rpbd (α) [Ring α] :
     smul_apply, mul_ite, mul_one, mul_zero]
     by_cases hxy : x = y
     · subst hxy
-      simp only [nsmul_eq_mul, mul_one, reduceIte, smul_eq_mul, add_sub_cancel]
+      simp only [mul_one, reduceIte, smul_eq_mul, add_sub_cancel]
       rw [sum_congr _ (fun i ↦ if x ∈ Ψ.blocks i then 1 else 0) (fun _ ↦ by simp_all only [reduceIte]),
         sum_boole, Ψ.regularity]
-    · simp only [nsmul_eq_mul, mul_one, smul_eq_mul, mul_ite, mul_zero, hxy, reduceIte, add_zero]
+    · simp only [mul_one, smul_eq_mul, mul_zero, hxy, reduceIte, add_zero]
       rw [sum_congr _ (fun i ↦ if {y, x} ⊆ Ψ.blocks i then 1 else 0)
         (fun _ ↦ by simp only [insert_subset_iff, singleton_subset_iff, ite_and]), sum_boole,
         Ψ.balance {y, x} (card_pair (Ne.symm hxy))]
@@ -109,7 +108,7 @@ def pbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := �
     have hyp := (ext_iff.mpr hM.2) x y
     simp only [allOnes, mul_apply, transpose_apply, add_apply, of_apply, smul_apply,
       one_apply, hxy, reduceIte, add_zero, smul_eq_mul, mul_zero, mul_one] at hyp
-    simp only [fromIncMat, mem_filter, mem_univ, true_and]
+    simp only [fromIncMat]
     have : ∀ i, M x i * M y i = if M x i = 1 ∧ M y i = 1 then 1 else 0 := by
       intro i
       rcases hM.1 x i with hx | hx
@@ -155,10 +154,10 @@ def bibd_of_bibdCondition {α : Type*} [DecidableEq α] [Ring α] [LinearOrder �
     rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
   incomplete := by
     obtain ⟨⟩ := hM
-    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast, and_self]
+    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast]
   t_le_k :=  by
     obtain ⟨⟩ := hM
-    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast, and_self]
+    simp_all only [Nat.cast_lt, Nat.ofNat_le_cast]
   balance := (pbd_of_rpbdCondition l r hM.2.2).balance
 
 end CombinatorialDesign
