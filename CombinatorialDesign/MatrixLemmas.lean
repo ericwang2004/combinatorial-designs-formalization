@@ -1,8 +1,6 @@
 import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Finset.Basic
 import Mathlib.NumberTheory.SumFourSquares
-import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 open Matrix Finset
 
