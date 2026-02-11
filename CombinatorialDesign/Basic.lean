@@ -155,9 +155,9 @@ theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintyp
   have count₂ := card_dependent P₂ Q₂ aux₂
   have swap_condition : ∀ y i, P₁ y ∧ Q₁ y i ↔ P₂ i ∧ Q₂ i y := by tauto
   rw [card_of_swap swap_condition, count₂] at count₁
-  have : #(filter P₂ univ) = Fintype.card ι := by rw [filter_True, card_univ]
+  have : #(filter P₂ univ) = Fintype.card ι := by rw [filter_true, card_univ]
   rw [this] at count₁
-  have : #(filter P₁ univ) = Fintype.card X := by rw [filter_True, card_univ]
+  have : #(filter P₁ univ) = Fintype.card X := by rw [filter_true, card_univ]
   rwa [this] at count₁
 
 theorem kb_eq_repv [Inhabited X] : k * (Fintype.card ι) = rep Φ * (Fintype.card X) := by
