@@ -190,7 +190,7 @@ noncomputable def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
   rw [←reindexAlgEquiv_oplus_oplus M' N' O, ←reindexAlgEquiv_oplus_oplus M N O]
   exact reindexMatCongr _ h'
 
-theorem equiv_forms_of_matCongr' {M N : Matrix m m α} (h : M ∼ₘ N) :
+theorem eq_range_forms_of_matCongr' {M N : Matrix m m α} (h : M ∼ₘ N) :
     Set.range M.toQuadraticMap' ⊆ Set.range N.toQuadraticMap' := by
   rintro _ ⟨x, rfl⟩
   use h.Aᵀ *ᵥ x
@@ -202,9 +202,9 @@ theorem equiv_forms_of_matCongr' {M N : Matrix m m α} (h : M ∼ₘ N) :
   rw [show (x ᵥ* h.A) = h.Aᵀ *ᵥ x from (mulVec_transpose _ _).symm]
   rw [mulVec_mulVec, ←h.cong]
 
-theorem equiv_forms_of_matCongr {M N : Matrix m m α} (h : M ∼ₘ N) :
+theorem eq_range_forms_of_matCongr {M N : Matrix m m α} (h : M ∼ₘ N) :
     Set.range M.toQuadraticMap' = Set.range N.toQuadraticMap' :=
-  Set.Subset.antisymm (equiv_forms_of_matCongr' h) (equiv_forms_of_matCongr' h.symm)
+  Set.Subset.antisymm (eq_range_forms_of_matCongr' h) (eq_range_forms_of_matCongr' h.symm)
 
 theorem toQuadraticMap_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
     let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
@@ -236,7 +236,7 @@ theorem matCongr_two_by_two_condition {a b c d : α}
     b • (1 : Matrix (Fin 1) (Fin 1) α) ∼ₘ c • 1 ⊕ₘ d • 1) :
     ∀ w x, ∃ y z, a * y^2 + b * z^2 = c * w^2 + d * x^2 := by
   have aux := range_of_two_by_two a b
-  rw [equiv_forms_of_matCongr h, range_of_two_by_two c d] at aux
+  rw [eq_range_forms_of_matCongr h, range_of_two_by_two c d] at aux
   intro w x
   obtain ⟨_, _, h⟩ := aux.subset (by use w, x)
   exact ⟨_, _, h.symm⟩
