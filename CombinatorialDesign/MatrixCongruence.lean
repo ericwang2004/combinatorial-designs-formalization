@@ -190,57 +190,6 @@ noncomputable def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
   rw [←reindexAlgEquiv_oplus_oplus M' N' O, ←reindexAlgEquiv_oplus_oplus M N O]
   exact reindexMatCongr _ h'
 
-theorem eq_range_forms_of_matCongr' {M N : Matrix m m α} (h : M ∼ₘ N) :
-    Set.range M.toQuadraticMap' ⊆ Set.range N.toQuadraticMap' := by
-  rintro _ ⟨x, rfl⟩
-  use h.Aᵀ *ᵥ x
-  simp only [Matrix.toQuadraticMap', LinearMap.BilinMap.toQuadraticMap_apply,
-    Matrix.toLinearMap₂'_apply']
-  conv_lhs => arg 1; rw [mulVec_transpose]
-  conv_lhs => arg 2; arg 2; rw [mulVec_transpose]
-  rw [dotProduct_mulVec, vecMul_vecMul, ←dotProduct_mulVec]
-  rw [show (x ᵥ* h.A) = h.Aᵀ *ᵥ x from (mulVec_transpose _ _).symm]
-  rw [mulVec_mulVec, ←h.cong]
-
-theorem eq_range_forms_of_matCongr {M N : Matrix m m α} (h : M ∼ₘ N) :
-    Set.range M.toQuadraticMap' = Set.range N.toQuadraticMap' :=
-  Set.Subset.antisymm (eq_range_forms_of_matCongr' h) (eq_range_forms_of_matCongr' h.symm)
-
-theorem toQuadraticMap_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
-    let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
-    M.toQuadraticMap' x = a * (x (Sum.inl 0))^2 + b * (x (Sum.inr 0))^2 := by
-  simp only [Matrix.toQuadraticMap', LinearMap.BilinMap.toQuadraticMap_apply,
-    Matrix.toLinearMap₂'_apply']
-  simp only [matDirectSum, fromBlocks, of_apply, dotProduct, mulVec, Fintype.sum_sum_type,
-    Finset.univ_unique, Finset.sum_singleton]
-  simp only [Sum.elim_inl, Sum.elim_inr, smul_apply, one_apply_eq, zero_apply,
-    zero_mul, add_zero, zero_add]
-  simp only [smul_eq_mul, Fin.default_eq_zero]
-  ring
-
-theorem range_of_two_by_two (a b : α) :
-    Set.range (a • 1 ⊕ₘ b • 1 : Matrix (Fin 1 ⊕ Fin 1) _ _).toQuadraticMap' =
-    {z | ∃ x₁ x₂, z = a * x₁^2 + b * x₂^2} := by
-  ext z
-  constructor
-  · rintro ⟨x, rfl⟩
-    use x (Sum.inl 0), x (Sum.inr 0)
-    rw [toQuadraticMap_two_by_two]
-  · rintro ⟨x₁, x₂, rfl⟩
-    use Sum.elim (fun _ ↦ x₁) (fun _ ↦ x₂)
-    rw [toQuadraticMap_two_by_two]
-    simp [Sum.elim_inl, Sum.elim_inr]
-
-theorem matCongr_two_by_two_condition {a b c d : α}
-    (h : a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ
-    b • (1 : Matrix (Fin 1) (Fin 1) α) ∼ₘ c • 1 ⊕ₘ d • 1) :
-    ∀ w x, ∃ y z, a * y^2 + b * z^2 = c * w^2 + d * x^2 := by
-  have aux := range_of_two_by_two a b
-  rw [eq_range_forms_of_matCongr h, range_of_two_by_two c d] at aux
-  intro w x
-  obtain ⟨_, _, h⟩ := aux.subset (by use w, x)
-  exact ⟨_, _, h.symm⟩
-
 noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     {m : ℤ} (mpos : 0 < m) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
@@ -325,6 +274,48 @@ def MatCongr_toIsometryEquiv
   conv_lhs => arg 1; rw [mulVec_transpose]
   rw [dotProduct_mulVec, vecMul_vecMul, ← dotProduct_mulVec]
   simp only [mulVec_mulVec, ← h.cong]
+
+theorem toQuadraticMap_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
+    let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
+    M.toQuadraticMap' x = a * (x (Sum.inl 0))^2 + b * (x (Sum.inr 0))^2 := by
+  simp only [Matrix.toQuadraticMap', LinearMap.BilinMap.toQuadraticMap_apply,
+    Matrix.toLinearMap₂'_apply']
+  simp only [matDirectSum, fromBlocks, of_apply, dotProduct, mulVec, Fintype.sum_sum_type,
+    Finset.univ_unique, Finset.sum_singleton]
+  simp only [Sum.elim_inl, Sum.elim_inr, smul_apply, one_apply_eq, zero_apply,
+    zero_mul, add_zero, zero_add]
+  simp only [smul_eq_mul, Fin.default_eq_zero]
+  ring
+
+theorem range_of_two_by_two (a b : α) :
+    Set.range (a • 1 ⊕ₘ b • 1 : Matrix (Fin 1 ⊕ Fin 1) _ _).toQuadraticMap' =
+    {z | ∃ x₁ x₂, z = a * x₁^2 + b * x₂^2} := by
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    use x (Sum.inl 0), x (Sum.inr 0)
+    rw [toQuadraticMap_two_by_two]
+  · rintro ⟨x₁, x₂, rfl⟩
+    use Sum.elim (fun _ ↦ x₁) (fun _ ↦ x₂)
+    rw [toQuadraticMap_two_by_two]
+    simp [Sum.elim_inl, Sum.elim_inr]
+
+theorem matCongr_two_by_two_condition {a b c d : α}
+    (h : a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ
+    b • (1 : Matrix (Fin 1) (Fin 1) α) ∼ₘ
+    c • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ d • (1 : Matrix (Fin 1) (Fin 1) α)) :
+    ∀ w x, ∃ y z, a * y^2 + b * z^2 = c * w^2 + d * x^2 := by
+  have e := MatCongr_toIsometryEquiv h
+  have hrng :
+      Set.range (a • 1 ⊕ₘ b • 1 : Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) α).toQuadraticMap' =
+      Set.range (c • 1 ⊕ₘ d • 1 : Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) α).toQuadraticMap' := by
+    ext v; constructor
+    · rintro ⟨x, rfl⟩; exact ⟨e x, e.map_app x⟩
+    · rintro ⟨x, rfl⟩; exact ⟨e.symm x, by simp⟩
+  rw [range_of_two_by_two, range_of_two_by_two] at hrng
+  intro w x
+  obtain ⟨_, _, h⟩ := hrng.symm.subset (by use w, x)
+  exact ⟨_, _, h.symm⟩
 
 theorem matrix_ext_of_isSymm {n : Type*} [Fintype n] [DecidableEq n]
     {R : Type*} [Field R] [Invertible (2 : R)]
