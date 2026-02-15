@@ -1,5 +1,6 @@
 import CombinatorialDesign.Basic
 import CombinatorialDesign.Isomorphism
+import CombinatorialDesign.SymmetricBIBD
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
 
@@ -66,5 +67,35 @@ def fanoPlaneIso : DesignIsomorphism fanoPlane.toDesign fanoPlane.toDesign :=
   }
   map_blocks := by trivial
 }
+
+variable {ι X : Type*} [Fintype ι] [Fintype X] [DecidableEq X]
+
+example {a b : ℕ} (h : a < b) : a * a < b * b := by exact Nat.mul_self_lt_mul_self h
+
+/-
+ There is no (22, 7, 2)-BIBD
+-/
+theorem no_22_7_2_BIBD (hv : Fintype.card X = 22) (Φ : BIBD ι X 7 2) : False := by
+  have : Inhabited X := by
+    refine Classical.inhabited_of_nonempty ?_
+    apply Fintype.card_pos_iff.mp
+    rw [hv]
+    exact Nat.zero_lt_succ 21
+  have repΦ : rep Φ = 7 := by
+    have := rep_property Φ
+    omega
+  have hι : Fintype.card X = Fintype.card ι := by
+    have := kb_eq_repv Φ
+    rw [repΦ] at this
+    omega
+  have Φ' := reindexBIBD (Equiv.refl X) (Fintype.equivOfCardEq hι) Φ
+  obtain ⟨n, hn⟩ := bruck_ryser_chowla_even (by rw [hv]; use 11) Φ'
+  simp only [Nat.reduceSub] at hn
+  have boundn : n ≤ 3 := by
+    by_contra hn'
+    rw [not_le] at hn'
+    have aux := Nat.mul_self_lt_mul_self hn'
+    omega
+  interval_cases n <;> omega
 
 end CombinatorialDesign

@@ -48,6 +48,43 @@ structure TDesign extends IncompleteDesign ι X k, BalancedDesign ι X t l where
 /-- Balanced Incomplete Block Design: 2-Design -/
 abbrev BIBD := TDesign ι X 2 k l
 
+def reindexBIBD {ι ι' X Y : Type*} {k l : ℕ}
+    [Fintype ι] [Fintype X] [DecidableEq X]
+    [Fintype ι'] [Fintype Y] [DecidableEq Y]
+    (e : X ≃ Y) (hι : ι' ≃ ι)
+    (Φ : BIBD ι X k l) : BIBD ι' Y k l where
+  blocks := (reindexDesign e hι Φ.toDesign).blocks
+  uniform i := by simp_rw [←Φ.uniform (hι i), reindexDesign, card_map]
+  incomplete := by
+    rw [Fintype.card_congr (id e.symm)]
+    exact Φ.incomplete
+  balance s hs := by
+    have aux := Φ.balance (map (id e.symm).toEmbedding s) (by rw [←hs]; apply card_map)
+    simp_rw [←aux]
+    apply card_bij (fun i hi ↦ hι i)
+    · intro i hi
+      simp only [mem_filter, mem_univ, true_and, id_eq] at hi ⊢
+      intro x hx
+      simp only [mem_map_equiv, Equiv.symm_symm] at hx
+      have := hi hx
+      simp only [reindexDesign, mem_map_equiv, Equiv.symm_apply_apply] at this
+      exact this
+    · intro _ _ _ _ hi
+      exact (EmbeddingLike.apply_eq_iff_eq hι).mp hi
+    intro i hi
+    use hι.invFun i
+    use (by
+      simp only [id_eq, mem_filter, mem_univ, true_and, reindexDesign,
+        Equiv.invFun_as_coe, Equiv.apply_symm_apply] at hi ⊢
+      intro x hx
+      rw [mem_map_equiv]
+      apply hi
+      simp only [mem_map_equiv, Equiv.symm_symm, Equiv.apply_symm_apply]
+      exact hx
+    )
+    exact (Equiv.apply_eq_iff_eq_symm_apply hι).mpr rfl
+  t_le_k := Φ.t_le_k
+
 structure differenceSet where
   elems : ι → G
   elems_unique : Function.Injective elems
