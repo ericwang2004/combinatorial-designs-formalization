@@ -70,8 +70,6 @@ def fanoPlaneIso : DesignIsomorphism fanoPlane.toDesign fanoPlane.toDesign :=
 
 variable {ι X : Type*} [Fintype ι] [Fintype X] [DecidableEq X]
 
-example {a b : ℕ} (h : a < b) : a * a < b * b := by exact Nat.mul_self_lt_mul_self h
-
 /-
  There is no (22, 7, 2)-BIBD
 -/
