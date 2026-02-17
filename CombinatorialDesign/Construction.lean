@@ -1,6 +1,20 @@
 import CombinatorialDesign.SymmetricBIBD
 import Mathlib.Tactic.Linarith
 
+/-!
+
+# Construction of designs
+
+This file defines several ways of constructing designs from other designs.
+These include:
+  * Sum
+  * Complement
+  * Derived
+  * Residual
+  * Difference set
+
+-/
+
 open CombinatorialDesign
 namespace CombinatorialDesign
 
@@ -9,9 +23,9 @@ variable {ι ι₁ ι₂ X : Type*} [Fintype X] [DecidableEq X]
   {k l₁ l₂ l r₁ r₂ t : ℕ}
 open Finset
 
-------------------------------
------- Sum Constriction ------
-------------------------------
+
+-- ## Sum construction
+
 def Design.sum (Φ₁ : Design ι₁ X) (Φ₂ : Design ι₂ X) : Design (ι₁ ⊕ ι₂) X where
   blocks := Sum.elim Φ₁.blocks Φ₂.blocks
 
@@ -61,9 +75,8 @@ def TDesign.sum (Φ₁ : TDesign ι₁ X k t l₁) (Φ₂ : TDesign ι₂ X k t 
 def BIBD.sum (Φ₁ : BIBD ι₁ X k l₁) (Φ₂ : BIBD ι₂ X k l₂) :
     BIBD (ι₁ ⊕ ι₂) X k (l₁ + l₂) := TDesign.sum Φ₁ Φ₂
 
--------------------------------------
------- Complement Constriction ------
--------------------------------------
+-- ## Complement construction
+
 def Design.complement (Φ : Design ι X) : Design ι X where
   blocks := (Φ.blocks ·)ᶜ
 
@@ -115,6 +128,8 @@ def BIBD.complement [Inhabited X] (Φ : BIBD ι X k l) (hyp : (Fintype.card X) -
       ext i; simp only [A, B, mem_compl, mem_union, mem_filter, mem_univ, true_and, not_or]
     rw [hgoal, card_compl, hunion]
 
+
+-- ## Derived and residual constructions
 
 def derived [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hl : 2 ≤ l) :
     BIBD {i // i ≠ i₀} {x // x ∈ Φ.blocks i₀} l (l - 1) where
@@ -213,6 +228,8 @@ def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
       · exact ⟨y.val, ⟨hy, y.property⟩, Subtype.ext rfl⟩
 
 variable {G : Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
+
+-- ## Difference set construction
 
 def fromDifferenceSet (D : differenceSet ι G l) :
     BIBD G G (Fintype.card ι) l where

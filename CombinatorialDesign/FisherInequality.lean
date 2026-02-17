@@ -1,6 +1,15 @@
 import CombinatorialDesign.IncidenceMatrix
 import CombinatorialDesign.MatrixLemmas
 
+/-!
+
+# Fisher's inequality
+
+This file proves the following theorem:
+Thm (Fisher). In a (v, k, λ, b, r)-BIBD, v ≤ b.
+
+-/
+
 open CombinatorialDesign Matrix Finset
 variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {l r : ℕ}
 

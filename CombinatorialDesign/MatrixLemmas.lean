@@ -2,6 +2,18 @@ import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Finset.Basic
 import Mathlib.NumberTheory.SumFourSquares
 
+/-!
+
+This file proves some lemmas about matrices that are helpful
+for proving Fisher's inequality. Most notably, we prove the
+following theorem:
+
+Thm. Let 𝔽 be a field and a, b ∈ 𝔽 with b ≠ 0. Then
+  det (aJ + bI) = bⁿ(1 + an/b),
+where I, J ∈ 𝔽^(n × n) are the identity and all-ones matrices.
+
+-/
+
 open Matrix Finset
 
 def allOnes (m n α : Type*) [One α] : Matrix m n α :=

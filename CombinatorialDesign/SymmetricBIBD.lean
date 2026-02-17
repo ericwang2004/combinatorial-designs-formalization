@@ -3,6 +3,28 @@ import CombinatorialDesign.MatrixLemmas
 import CombinatorialDesign.MatrixCongruence
 import Mathlib.Algebra.CharP.Invertible
 
+/-!
+
+## Symmetric BIBDs and the Bruck-Ryser-Chowla theorem
+
+Def. A (v, k, λ, b, r)-BIBD is *symmetric* if b = v.
+
+This file proves the following theorems:
+
+Thm. Let A₁ ≠ A₂ be distinct blocks of a symmetric BIBD. Then
+  #(A₁ ∩ A₂) = λ.
+
+Thm. Let Φ be a nontrivial RPBD with b = v. Then Φ is a symmetric
+(v, k, λ)-BIBD.
+
+Thm (Bruck-Ryser-Chowla). Let Φ be a symmetric (v, k, λ)-BIBD.
+  * If v is even, then k - λ is a perfect square.
+  * If v is odd, then there exists a nontrivial integer solution
+    (x, y, z) to the diophantine equation
+      x² = (k - λ)y² + (-1)^{(v+1)/2} λz²
+
+-/
+
 open CombinatorialDesign Matrix Finset MatCongr
 namespace CombinatorialDesign
 

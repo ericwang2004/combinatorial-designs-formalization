@@ -5,6 +5,28 @@ import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
+/-!
+
+# Matrix congruence
+
+This file develops the quadratic form theory that we need to
+prove the Bruck-Ryser-Chowla theorem. (The BRC theorem itself
+is not stated in this file.)
+
+## Main definitions and theorems:
+  * MatCongr -- matrix congruence
+  * matDirectSum -- direct sum of matrices
+  * matCongrOneOfFourDiv -- if n is a multiple of 4, then
+    I ∼ mI for any positive integer m, where I is the n × n
+    identity matrix
+  * oplusLeftCancel -- Witt's cancellation lemma
+
+Note that the lemmas needed for the Witt cancellation lemma,
+which is a big result, are separately given in the file
+`WittCancellation.lean`.
+
+-/
+
 open Matrix Finset
 
 structure MatCongr {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]

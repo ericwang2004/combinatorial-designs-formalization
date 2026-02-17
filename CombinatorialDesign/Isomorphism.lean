@@ -1,5 +1,18 @@
 import CombinatorialDesign.IncidenceMatrix
 
+/-!
+
+# Isomorphism of designs
+
+This file defines the notion of isomorphism of designs.
+
+Let Φ = (X, A) and Ψ = (Y, B) be designs. We say Φ and Ψ
+are isomorphic if there exists a bijection f : X → Y such that
+f(A) = B, where f(A) means "transform every point and every
+block in A by f."
+
+-/
+
 open CombinatorialDesign Finset Equiv
 namespace CombinatorialDesign
 
@@ -12,6 +25,8 @@ structure DesignIsomorphism (Φ₁ : Design ι X) (Φ₂ : Design ι Y)
   map_blocks : ∀ i, image toFun (Φ₁.blocks i) = Φ₂.blocks (perm i)
 
 variable {Φ₁ : Design ι X} {Φ₂ : Design ι Y} {Φ₃ : Design ι Z}
+
+-- ## DesignIsomorphism is an equivalence relation on the type Design ι X
 
 @[symm]
 def symm (f : DesignIsomorphism Φ₁ Φ₂) : DesignIsomorphism Φ₂ Φ₁ where
@@ -56,8 +71,10 @@ theorem symm_trans_self (f : DesignIsomorphism Φ₁ Φ₂) : trans (symm f) f =
   simp only [trans, symm, Equiv.symm_trans_self, toFun_as_coe, coe_refl,
     refl_symm, invFun_as_coe]; rfl
 
+/-- An automorphism is an isomorphism from a design to itself -/
 abbrev DesignAut := DesignIsomorphism Φ Φ
 
+/-- The type of automorphisms on a design Φ forms a group under composition -/
 instance : Group (DesignAut Φ) where
   mul g h := trans h g
   one := refl Φ
@@ -66,6 +83,16 @@ instance : Group (DesignAut Φ) where
   one_mul _ := rfl
   mul_one _ := rfl
   inv_mul_cancel := self_trans_symm
+
+/-
+The rest of the file proves a characterization of isomorphism
+in terms of incidence matrices. Specifically:
+
+Let M, N be v × b incidence matrices of Φ and Ψ. Then Φ and Ψ are
+isomorphic if and only if there exist permutations
+γ : [v] → [v] and β : [b] → [b]
+such that M i j = N (γ i) (β j), all i and j.
+-/
 
 theorem ite_eq_ite' {α : Type*} [Zero α] [One α] [NeZero (R := α) 1]
     {P Q : Prop} [Decidable P] [Decidable Q] :

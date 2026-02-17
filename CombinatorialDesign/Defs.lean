@@ -1,5 +1,23 @@
 import Mathlib.Data.Fintype.Prod
 
+/-!
+
+# The Combinatorial Design Hierarchy
+
+This files states the basic definitions of combinatorial design theory.
+The most commonly used ones are the following:
+
+Def. A *design* Φ is a pair (X, A) where X is a finite set (of *points*)
+and A is a collection of subsets (*blocks*) of X.
+
+Def. Let 2 ≤ k < v. A *balanced incomplete block design* (BIBD)
+is a design (X, A) where
+  * #X = v
+  * Each block contains exactly k points
+  * Every pair of distinct points are contained in λ blocks
+
+-/
+
 open Finset
 namespace CombinatorialDesign
 

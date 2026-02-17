@@ -1,34 +1,65 @@
 import CombinatorialDesign.Basic
 import CombinatorialDesign.MatrixLemmas
 
+/-!
+
+# Incidence matrices
+
+This file defines the incidence matrix of a design.
+Given a design Φ = (X, A), the incidence matrix of Φ
+is a #X × #A matrix M where Mij = 1 if xᵢ ∈ Aⱼ and
+Mij = 0 otherwise.
+
+Conversely, any matrix gives rise to a design in the
+obvious way.
+
+We prove basic theorems about the correspondence between
+algebraic properties of incidence matrices and combinatorial
+properties of designs.
+
+-/
+
 open CombinatorialDesign Matrix Finset Fintype
 namespace CombinatorialDesign
 
 variable {ι X m n : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] [Fintype m] [Fintype n] {k l : ℕ}
   (Φ : BIBD ι X k l)
 
+/-- Convert a design to an incidence matrix -/
 def toIncMat (α : Type*) [One α] [Zero α] (Φ : Design ι X) :
     Matrix X ι α :=
   of (fun x i ↦ if x ∈ Φ.blocks i then 1 else 0)
 
+/-- Convert an incidence matrix to a design -/
 def fromIncMat (α : Type*) [DecidableEq α] [One α] (M : Matrix X ι α) : Design ι X where
   blocks := fun i ↦ {x | M x i = 1}
 
+
 omit [DecidableEq ι] in
+/-- Any column of the incidence matrix of a (v, k, λ)-BIBD sums to k -/
 theorem col_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] (j : ι) :
     ∑ x, (toIncMat α Φ.toDesign) x j = k := by
   simp only [toIncMat, of_apply, Finset.sum_ite_mem, univ_inter, sum_const, nsmul_one]
   rw [Φ.uniform]
 
 omit [DecidableEq ι] in
+/-- Any row of the incidence matrix of a (v, k, λ)-BIBD Φ sums to rep Φ -/
 theorem row_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] [Inhabited X] (x : X) :
     ∑ j, (toIncMat α Φ.toDesign) x j = rep Φ := by
   simp only [toIncMat, of_apply, sum_boole]
   rw [←rep_eq_rep_elem _ x, rep_elem]
 
+/-- If Φ has incidence matrix M, the design corresponding to Mᵀ is the dual of Φ -/
 def dual (α : Type*) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
     : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
 
+/--
+Let Φ be a (v, k, λ, b, r)-BIBD, and let Ψ be its dual design.
+The following hold:
+  * Every block of Ψ has size r.
+  * Every point in Ψ occurs in k blocks of Ψ.
+  * Any two blocks B₁ ≠ B₂ of Ψ intersect in λ points.
+-/
 theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
     [One α] [Zero α] [NeZero (R := α) 1] :
     let Ψ := dual α Φ.toDesign
@@ -48,16 +79,37 @@ theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
       convert Φ.balance {i, j} (card_pair hij) using 2
       ext x; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
 
+/--
+Let M be a matrix. We say that M satisfies the RPBD condition if:
+  * Every entry of M is 0 or 1.
+  * MMᵀ = λJ + (r - λ)I.
+-/
 def rpbdCondition (α : Type*) [Ring α]
     [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
   isZeroOne M ∧
   M * Mᵀ = l • (allOnes _ _ _) + (r - l) • 1
 
+/--
+Let M be a matrix. We say that M satisfies the BIBD condition if:
+  * M satisfies the RPBD condition.
+  * uM = ku, where u is the all-ones vector.
+-/
 def bibdCondition (α : Type*) [Ring α] [LT α] [LE α] [DecidableEq m]
     (k l r : α) (M : Matrix m n α) : Prop :=
   (Fintype.card m > k ∧ k ≥ 2) ∧
   (allOnes _ _ α) * M = k • (allOnes (Fin 1) _ α) ∧
   rpbdCondition α l r M
+
+
+/-
+## RPBD and BIBD conditions
+
+Let Φ be a design and M its incidence matrix.
+
+The rest of this file proves that:
+  * Φ is a RPBD if and only if M satisfies the RPBD condition.
+  * Φ is a BIBD if and only if M satisfies the BIBD condition.
+-/
 
 variable {r : ℕ} (Ψ : RPBD ι X l r)
 

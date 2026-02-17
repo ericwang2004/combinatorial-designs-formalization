@@ -1,5 +1,14 @@
 import CombinatorialDesign.IncidenceMatrix
 
+/-!
+
+# Hadamard matrices
+
+This files defines Hadamard matrices and proves that
+the dimension of any Hadamard matrix must be a multiple of 4.
+
+-/
+
 open CombinatorialDesign Matrix Finset
 namespace CombinatorialDesign
 
