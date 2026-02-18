@@ -1,16 +1,24 @@
 import CombinatorialDesign.IncidenceMatrix
 
 /-!
+# Isomorphism of Designs
 
-# Isomorphism of designs
+This file defines design isomorphisms and proves that they form an equivalence relation.
+Two designs Φ = (X, A) and Ψ = (Y, B) are isomorphic if there exists a bijection f : X → Y
+mapping blocks of Φ to blocks of Ψ.
 
-This file defines the notion of isomorphism of designs.
+## Main Definitions
 
-Let Φ = (X, A) and Ψ = (Y, B) be designs. We say Φ and Ψ
-are isomorphic if there exists a bijection f : X → Y such that
-f(A) = B, where f(A) means "transform every point and every
-block in A by f."
+* `DesignIsomorphism Φ₁ Φ₂` - An isomorphism between two designs
+* `DesignAut Φ` - The type of automorphisms of a design
+* `isoOfPerm` - Constructs an isomorphism from a permutation relating incidence matrices
 
+## Main Results
+
+* `self_trans_symm` - Composing an isomorphism with its inverse gives the identity
+* `symm_trans_self` - Composing the inverse with the isomorphism gives the identity
+* `Group (DesignAut Φ)` - The automorphisms of a design form a group
+* `perm_of_iso` - An isomorphism gives a permutation relating the incidence matrices
 -/
 
 open CombinatorialDesign Finset Equiv
@@ -18,6 +26,7 @@ namespace CombinatorialDesign
 
 variable {ι X Y Z : Type*} [DecidableEq X] [DecidableEq ι] [DecidableEq Y] [DecidableEq Z]
 
+/-- An isomorphism between two designs: a bijection on points that maps blocks to blocks -/
 @[ext]
 structure DesignIsomorphism (Φ₁ : Design ι X) (Φ₂ : Design ι Y)
     extends X ≃ Y where
@@ -26,8 +35,9 @@ structure DesignIsomorphism (Φ₁ : Design ι X) (Φ₂ : Design ι Y)
 
 variable {Φ₁ : Design ι X} {Φ₂ : Design ι Y} {Φ₃ : Design ι Z}
 
--- ## DesignIsomorphism is an equivalence relation on the type Design ι X
+/-! ## Equivalence Relation Structure -/
 
+/-- The inverse of a design isomorphism -/
 @[symm]
 def symm (f : DesignIsomorphism Φ₁ Φ₂) : DesignIsomorphism Φ₂ Φ₁ where
   toEquiv := f.toEquiv.symm
@@ -40,6 +50,7 @@ def symm (f : DesignIsomorphism Φ₁ Φ₂) : DesignIsomorphism Φ₂ Φ₁ whe
     rw [hi, Equiv.symm_apply_apply, ←f.map_blocks]
     aesop
 
+/-- The composition of two design isomorphisms -/
 @[trans]
 def trans (f : DesignIsomorphism Φ₁ Φ₂) (g : DesignIsomorphism Φ₂ Φ₃)
     : DesignIsomorphism Φ₁ Φ₃ where
@@ -52,6 +63,7 @@ def trans (f : DesignIsomorphism Φ₁ Φ₂) (g : DesignIsomorphism Φ₂ Φ₃
 
 variable (Φ : Design ι X)
 
+/-- The identity isomorphism -/
 @[refl]
 def refl : DesignIsomorphism Φ Φ where
   toEquiv := Equiv.refl _
@@ -59,12 +71,14 @@ def refl : DesignIsomorphism Φ Φ where
   map_blocks := by simp
 
 omit [DecidableEq ι]
+/-- An isomorphism composed with its inverse is the identity -/
 @[simp]
 theorem self_trans_symm (f : DesignIsomorphism Φ₁ Φ₂) : trans f (symm f) = refl Φ₁ := by
   ext; all_goals
   simp only [trans, symm, Equiv.self_trans_symm, toFun_as_coe, coe_refl,
     refl_symm, invFun_as_coe]; rfl
 
+/-- The inverse of an isomorphism composed with itself is the identity -/
 @[simp]
 theorem symm_trans_self (f : DesignIsomorphism Φ₁ Φ₂) : trans (symm f) f = refl Φ₂ := by
   ext; all_goals
@@ -84,16 +98,13 @@ instance : Group (DesignAut Φ) where
   mul_one _ := rfl
   inv_mul_cancel := self_trans_symm
 
-/-
-The rest of the file proves a characterization of isomorphism
-in terms of incidence matrices. Specifically:
+/-! ## Incidence Matrix Characterization
 
-Let M, N be v × b incidence matrices of Φ and Ψ. Then Φ and Ψ are
-isomorphic if and only if there exist permutations
-γ : [v] → [v] and β : [b] → [b]
-such that M i j = N (γ i) (β j), all i and j.
+Two designs are isomorphic if and only if their incidence matrices are related by
+permutations of rows and columns.
 -/
 
+/-- Two indicator values are equal iff their conditions are equivalent -/
 theorem ite_eq_ite' {α : Type*} [Zero α] [One α] [NeZero (R := α) 1]
     {P Q : Prop} [Decidable P] [Decidable Q] :
     (if P then (1 : α) else 0) = (if Q then 1 else 0) ↔ (P ↔ Q) := by
@@ -107,6 +118,7 @@ theorem ite_eq_ite' {α : Type*} [Zero α] [One α] [NeZero (R := α) 1]
     tauto
   · exact if_ctx_congr hyp (congrFun rfl) (congrFun rfl)
 
+/-- Construct an isomorphism from permutations relating the incidence matrices -/
 def isoOfPerm {α : Type*} [One α] [Zero α] [NeZero (R := α) 1]
     (Φ₁ : Design ι X) (Φ₂ : Design ι Y) (γ : X ≃ Y) (σ : ι ≃ ι)
     (hyp : ∀ i j, (toIncMat α Φ₁) i j = (toIncMat α Φ₂) (γ i) (σ j))
@@ -125,6 +137,7 @@ def isoOfPerm {α : Type*} [One α] [Zero α] [NeZero (R := α) 1]
       rwa [←hyp]
     · exact ⟨γ.symm _, by rwa [hyp, γ.apply_symm_apply], γ.apply_symm_apply _⟩
 
+/-- An isomorphism induces permutations relating the incidence matrices -/
 theorem perm_of_iso {α : Type*} [One α] [Zero α] [NeZero (R := α) 1]
     (Φ₁ : Design ι X) (Φ₂ : Design ι Y) (iso : DesignIsomorphism Φ₁ Φ₂) :
     ∀ i j, (toIncMat α Φ₁) i j = (toIncMat α Φ₂) (iso.toFun i) (iso.perm j) := by

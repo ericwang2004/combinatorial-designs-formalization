@@ -4,25 +4,22 @@ import CombinatorialDesign.MatrixCongruence
 import Mathlib.Algebra.CharP.Invertible
 
 /-!
+# Symmetric BIBDs and the Bruck-Ryser-Chowla Theorem
 
-## Symmetric BIBDs and the Bruck-Ryser-Chowla theorem
+This file proves properties of symmetric BIBDs (where b = v) and the Bruck-Ryser-Chowla
+theorem, which gives necessary conditions for the existence of symmetric BIBDs.
 
-Def. A (v, k, λ, b, r)-BIBD is *symmetric* if b = v.
+## Main Results
 
-This file proves the following theorems:
+* `card_inter_block_eq_l` - Distinct blocks of a symmetric BIBD intersect in exactly λ points
+* `symmNontrivialRPBD_to_symmBIBD` - A nontrivial RPBD with b = v is a symmetric BIBD
+* `bruck_ryser_chowla_even` - If v is even, then k - λ is a perfect square
+* `bruck_ryser_chowla_odd` - If v is odd, x² = (k - λ)y² + (-1)^((v-1)/2) λz² has a
+  nontrivial integer solution
 
-Thm. Let A₁ ≠ A₂ be distinct blocks of a symmetric BIBD. Then
-  #(A₁ ∩ A₂) = λ.
+## References
 
-Thm. Let Φ be a nontrivial RPBD with b = v. Then Φ is a symmetric
-(v, k, λ)-BIBD.
-
-Thm (Bruck-Ryser-Chowla). Let Φ be a symmetric (v, k, λ)-BIBD.
-  * If v is even, then k - λ is a perfect square.
-  * If v is odd, then there exists a nontrivial integer solution
-    (x, y, z) to the diophantine equation
-      x² = (k - λ)y² + (-1)^{(v+1)/2} λz²
-
+* Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
 open CombinatorialDesign Matrix Finset MatCongr
@@ -30,6 +27,7 @@ namespace CombinatorialDesign
 
 variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι] {v k l : ℕ} (Φ : BIBD X X k l)
 
+/-- Distinct blocks of a symmetric BIBD intersect in exactly λ points -/
 theorem card_inter_block_eq_l
     [Inhabited X] {i j : X} (inej : i ≠ j) : #(Φ.blocks i ∩ Φ.blocks j) = l := by
   let M := toIncMat ℚ Φ.toDesign
@@ -52,6 +50,7 @@ theorem card_inter_block_eq_l
   have := ext_iff.mpr (eq_of_full_rank_mul_eq (Equiv.refl X) rankM MMtM) i j
   simp_all only [of_apply, ite_false, Nat.cast_inj]
 
+/-- Each block size times r equals r + λ(v - 1) in a symmetric nontrivial RPBD -/
 theorem bibd_of_symmNontrivialRPBD  {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
     ∀ i, #(Ψ.blocks i) * r = r + l * ((Fintype.card X) - 1) := by
   intro i
@@ -83,6 +82,7 @@ theorem bibd_of_symmNontrivialRPBD  {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
   rwa [←Nat.cast_one, ←Nat.cast_sub (v_pos_of_nontrivialRPBD Ψ), ←Nat.cast_mul,
     ←Nat.cast_mul, ←Nat.cast_add, Nat.cast_inj] at this
 
+/-- In a symmetric nontrivial RPBD, r divides λ(v - 1) -/
 theorem r_div_of_symmNontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
     r ∣ l * ((Fintype.card X) - 1) := by
   suffices h : r ∣ r + l * ((Fintype.card X) - 1) from Nat.dvd_add_self_left.mp h
@@ -91,10 +91,12 @@ theorem r_div_of_symmNontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD X X l r) :
   rw [←bibd_of_symmNontrivialRPBD Ψ, mul_comm]
 
 omit [DecidableEq X] in
+/-- Auxiliary arithmetic identity: (1 + λ(v-1)/r) · r = r + λ(v-1) -/
 private theorem vlr {l r : ℕ} (h : r ∣ l * ((Fintype.card X) - 1)) :
     (1 + l * ((Fintype.card X) - 1) / r) * r = r + l * ((Fintype.card X) - 1) := by
   rw [add_mul, one_mul, Nat.div_mul_cancel h]
 
+/-- A nontrivial RPBD with b = v is a symmetric BIBD -/
 def symmNontrivialRPBD_to_symmBIBD {r : ℕ} (hl : l > 0) (Ψ : nontrivialRPBD X X l r) :
     BIBD X X (1 + l * ((Fintype.card X) - 1) / r) l where
   toBalancedDesign := Ψ.toBalancedDesign
@@ -119,6 +121,9 @@ def symmNontrivialRPBD_to_symmBIBD {r : ℕ} (hl : l > 0) (Ψ : nontrivialRPBD X
     rw [←r_pos_of_nontrivialRPBD Ψ |> Nat.ne_zero_iff_zero_lt.mpr |> Nat.mul_left_inj,
       r_div_of_symmNontrivialRPBD Ψ |> vlr, bibd_of_symmNontrivialRPBD]
 
+/-! ## Bruck-Ryser-Chowla Theorem -/
+
+/-- Bruck-Ryser-Chowla (even case): if v is even then k - λ is a perfect square -/
 theorem bruck_ryser_chowla_even [Inhabited X]
     (hv : Even (Fintype.card X)) (Φ : BIBD X X k l) : IsSquare (k - l) := by
   set v := Fintype.card X
@@ -159,6 +164,7 @@ theorem bruck_ryser_chowla_even [Inhabited X]
   rwa [Field.div_eq_mul_inv, ←pow_sub₀ _ kl_cast_ne (Nat.sub_le _ _),
     Nat.sub_sub_self vge1, pow_one, ←Nat.cast_sub kl, Rat.isSquare_natCast_iff] at this
 
+/-- In a symmetric BIBD, λ < k -/
 theorem l_lt_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l < k := by
   cases l with
   | zero => exact k_pos_of_bibd Φ
@@ -170,9 +176,11 @@ theorem l_lt_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l < k := by
       Nat.zero_lt_succ l |> Nat.mul_lt_mul_of_pos_left aux
     _ = k * (k - 1) := eq_of_symmBIBD Φ)
 
+/-- In a symmetric BIBD, λ ≤ k -/
 theorem l_le_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l ≤ k :=
   l_lt_k_of_symmBIBD Φ |> Nat.le_of_succ_le
 
+/-- In a symmetric BIBD with k ≥ λ + 2, we have k - λ < v - k -/
 theorem k_sub_l_lt_v_minus_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l)
     (hyp : l + 2 ≤ k) : k - l < Fintype.card X - k := by
   have lk_nat : l + 1 ≤ k := l_lt_k_of_symmBIBD Φ
@@ -216,6 +224,7 @@ theorem k_sub_l_lt_v_minus_k_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l)
     rw [this, add_le_add_iff_left] at hyp
     simp only [Nat.not_ofNat_le_one] at hyp
 
+/-- Key matrix congruence used in the Bruck-Ryser-Chowla theorem -/
 noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     (hrep : rep Φ = k) (hl : l ≠ 0) (hkl : k ≠ l) :
     ((k : ℚ) - l) • (1 : Matrix X X ℚ) ⊕ₘ (-((k : ℚ) - l) / (l : ℚ)) •
@@ -267,6 +276,8 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     cong := hA'
   }
 
+/-- Bruck-Ryser-Chowla (odd case): if v = 2u + 1 then x² = (k - λ)y² + (-1)^u λz² has a
+nontrivial integer solution -/
 theorem bruck_ryser_chowla_odd [Inhabited X] {u : ℕ}
     (hv : Fintype.card X = 2 * u + 1) (Φ : BIBD X X k l) :
     ∃ x y z : ℤ, (x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) ∧ x^2 = (k - l) * y^2 + (-1)^u * l * z^2 := by

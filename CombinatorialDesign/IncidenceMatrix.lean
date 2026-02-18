@@ -2,21 +2,33 @@ import CombinatorialDesign.Basic
 import CombinatorialDesign.MatrixLemmas
 
 /-!
+# Incidence Matrices
 
-# Incidence matrices
+This file defines the incidence matrix of a design and proves the correspondence between
+algebraic properties of incidence matrices and combinatorial properties of designs.
 
-This file defines the incidence matrix of a design.
-Given a design Φ = (X, A), the incidence matrix of Φ
-is a #X × #A matrix M where Mij = 1 if xᵢ ∈ Aⱼ and
-Mij = 0 otherwise.
+## Main Definitions
 
-Conversely, any matrix gives rise to a design in the
-obvious way.
+* `toIncMat α Φ` - The incidence matrix of a design Φ over a type α
+* `fromIncMat α M` - The design corresponding to a 0-1 matrix M
+* `dual α Φ` - The dual design, obtained by transposing the incidence matrix
+* `rpbdCondition α l r M` - The algebraic condition on M characterizing RPBDs
+* `bibdCondition α k l r M` - The algebraic condition on M characterizing BIBDs
 
-We prove basic theorems about the correspondence between
-algebraic properties of incidence matrices and combinatorial
-properties of designs.
+## Main Results
 
+* `col_sum_incmat` - Each column of the incidence matrix of a BIBD sums to k
+* `row_sum_incmat` - Each row of the incidence matrix of a BIBD sums to r
+* `properties_of_dual` - The dual of a BIBD has block size r, regularity k, and pairwise
+  intersection λ
+* `rpbdCondition_of_rpbd` - The incidence matrix of an RPBD satisfies the RPBD condition
+* `bibdCondition_of_bibd` - The incidence matrix of a BIBD satisfies the BIBD condition
+* `rpbd_of_rpbdCondition` - A matrix satisfying the RPBD condition gives an RPBD
+* `bibd_of_bibdCondition` - A matrix satisfying the BIBD condition gives a BIBD
+
+## References
+
+* Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
 open CombinatorialDesign Matrix Finset Fintype
@@ -49,17 +61,13 @@ theorem row_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] [
   simp only [toIncMat, of_apply, sum_boole]
   rw [←rep_eq_rep_elem _ x, rep_elem]
 
-/-- If Φ has incidence matrix M, the design corresponding to Mᵀ is the dual of Φ -/
+/-! ## Dual Design -/
+
+/-- The dual design, obtained by transposing the incidence matrix -/
 def dual (α : Type*) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
     : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
 
-/--
-Let Φ be a (v, k, λ, b, r)-BIBD, and let Ψ be its dual design.
-The following hold:
-  * Every block of Ψ has size r.
-  * Every point in Ψ occurs in k blocks of Ψ.
-  * Any two blocks B₁ ≠ B₂ of Ψ intersect in λ points.
--/
+/-- The dual of a BIBD has block size r, regularity k, and pairwise block intersection λ -/
 theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
     [One α] [Zero α] [NeZero (R := α) 1] :
     let Ψ := dual α Φ.toDesign
@@ -79,21 +87,19 @@ theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
       convert Φ.balance {i, j} (card_pair hij) using 2
       ext x; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
 
-/--
-Let M be a matrix. We say that M satisfies the RPBD condition if:
-  * Every entry of M is 0 or 1.
-  * MMᵀ = λJ + (r - λ)I.
+/-! ## RPBD and BIBD Conditions
+
+A matrix satisfies the RPBD condition if it is 0-1 and M · Mᵀ = λJ + (r - λ)I.
+It satisfies the BIBD condition if additionally uM = ku.
 -/
+
+/-- The RPBD condition: M is 0-1 and M · Mᵀ = λJ + (r - λ)I -/
 def rpbdCondition (α : Type*) [Ring α]
     [DecidableEq m] (l r : α) (M : Matrix m n α) : Prop :=
   isZeroOne M ∧
   M * Mᵀ = l • (allOnes _ _ _) + (r - l) • 1
 
-/--
-Let M be a matrix. We say that M satisfies the BIBD condition if:
-  * M satisfies the RPBD condition.
-  * uM = ku, where u is the all-ones vector.
--/
+/-- The BIBD condition: M satisfies the RPBD condition and uM = ku -/
 def bibdCondition (α : Type*) [Ring α] [LT α] [LE α] [DecidableEq m]
     (k l r : α) (M : Matrix m n α) : Prop :=
   (Fintype.card m > k ∧ k ≥ 2) ∧
@@ -101,19 +107,12 @@ def bibdCondition (α : Type*) [Ring α] [LT α] [LE α] [DecidableEq m]
   rpbdCondition α l r M
 
 
-/-
-## RPBD and BIBD conditions
-
-Let Φ be a design and M its incidence matrix.
-
-The rest of this file proves that:
-  * Φ is a RPBD if and only if M satisfies the RPBD condition.
-  * Φ is a BIBD if and only if M satisfies the BIBD condition.
--/
+/-! ## Forward Direction: Designs to Matrix Conditions -/
 
 variable {r : ℕ} (Ψ : RPBD ι X l r)
 
 omit [Fintype X] [DecidableEq ι] in
+/-- The incidence matrix of an RPBD times the all-ones matrix equals r times the all-ones matrix -/
 theorem rpbd_incmat_allOnes (α n) [Ring α] :
     toIncMat α Ψ.toDesign * allOnes _ n _ = (r : α) • allOnes _ _ _ := by
   ext
@@ -121,6 +120,7 @@ theorem rpbd_incmat_allOnes (α n) [Ring α] :
   rw [Ψ.regularity]
 
 omit [Fintype X] [DecidableEq ι] in
+/-- The incidence matrix of an RPBD satisfies the RPBD condition -/
 theorem rpbdCondition_of_rpbd (α) [Ring α] :
     rpbdCondition α l r (toIncMat _ Ψ.toDesign) := by
   constructor
@@ -141,6 +141,7 @@ theorem rpbdCondition_of_rpbd (α) [Ring α] :
         Ψ.balance {y, x} (card_pair (Ne.symm hxy))]
 
 omit [DecidableEq ι] in
+/-- The incidence matrix of a BIBD satisfies the BIBD condition -/
 theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRing α] [Inhabited X] :
     bibdCondition α k l (rep Φ) (toIncMat _ Φ.toDesign) := by
   constructor
@@ -151,6 +152,9 @@ theorem bibdCondition_of_bibd {α} [Ring α] [LinearOrder α] [IsStrictOrderedRi
         Finset.sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul, mul_one, Φ.uniform, smul_eq_mul]
     · exact (rpbdCondition_of_rpbd (BIBD_to_RPBD Φ) α)
 
+/-! ## Converse Direction: Matrix Conditions to Designs -/
+
+/-- A matrix satisfying the RPBD condition gives a PBD -/
 def pbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) : PBD ι X l where
   blocks := (fromIncMat _ M).blocks
@@ -171,6 +175,7 @@ def pbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := �
     rw [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
     simp only [hs', mem_filter, mem_univ, true_and, insert_subset_iff, singleton_subset_iff, hyp]
 
+/-- A matrix satisfying the RPBD condition gives an RPBD -/
 def rpbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := α) 1] [CharZero α]
     {M : Matrix X ι α} (l r : ℕ) (hM : rpbdCondition α l r M) :
     RPBD ι X l r := {
@@ -190,6 +195,7 @@ def rpbd_of_rpbdCondition {α : Type*} [DecidableEq α] [Ring α] [NeZero (R := 
     rwa [sum_congr _ _ this, sum_boole, Nat.cast_inj] at hyp
 }
 
+/-- A matrix satisfying the BIBD condition gives a BIBD -/
 def bibd_of_bibdCondition {α : Type*} [DecidableEq α] [Ring α] [LinearOrder α] [IsStrictOrderedRing α]
     {M : Matrix X ι α} (k l r : ℕ) (hM : bibdCondition α k l r M) :
     BIBD ι X k l where

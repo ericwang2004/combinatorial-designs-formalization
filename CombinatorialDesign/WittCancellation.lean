@@ -1,6 +1,24 @@
 import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Reflection
 
+/-!
+# Witt Cancellation for Quadratic Forms
+
+This file proves Witt's cancellation theorem for quadratic forms over fields of
+characteristic ≠ 2: if q ⊕ q₁ ≅ q ⊕ q₂ then q₁ ≅ q₂.
+
+## Main Definitions
+
+* `qReflection` - Reflection of a quadratic space through a nondegenerate vector
+* `qReflectionIsometryEquiv` - A quadratic reflection as an isometry equivalence
+
+## Main Results
+
+* `qReflection_isometry` - Quadratic reflections preserve the quadratic form
+* `cancel_one_dim` - One-dimensional cancellation: a·x² ⊕ q₁ ≅ a·x² ⊕ q₂ implies q₁ ≅ q₂
+* `witt_cancellation` - Witt's cancellation theorem for quadratic forms
+-/
+
 open QuadraticMap LinearMap Module
 
 noncomputable section
@@ -13,29 +31,35 @@ variable {V₂ : Type*} [AddCommGroup V₂] [Module F V₂] [FiniteDimensional F
 
 namespace QuadraticForm
 
+/-- The dual functional used to define reflections through a vector -/
 def reflectionDual (Q : QuadraticForm F V) (y : V) (_ : Q y ≠ 0) :
     Module.Dual F V :=
   (2 * (Q y)⁻¹) • (associated (R := F) Q y)
 
+/-- The reflection dual applied to its defining vector gives 2 -/
 theorem reflectionDual_apply_self (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) :
     reflectionDual Q y hy y = 2 := by
   simp only [reflectionDual, LinearMap.smul_apply, smul_eq_mul]
   rw [QuadraticMap.associated_eq_self_apply]
   field_simp
 
+/-- Reflection of a quadratic space through a nondegenerate vector -/
 def qReflection (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) :
     V ≃ₗ[F] V :=
   Module.reflection (reflectionDual_apply_self Q y hy)
 
+/-- The explicit formula for the quadratic reflection -/
 theorem qReflection_apply (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) (x : V) :
     qReflection Q y hy x = x - (reflectionDual Q y hy x) • y :=
   Module.preReflection_apply y (reflectionDual Q y hy) x
 
+/-- A quadratic reflection sends y to -y -/
 @[simp]
 theorem qReflection_apply_self (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) :
     qReflection Q y hy y = -y :=
   Module.reflection_apply_self (reflectionDual_apply_self Q y hy)
 
+/-- Quadratic reflections are involutions -/
 theorem qReflection_involutive (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) :
     Function.Involutive (qReflection Q y hy) :=
   Module.involutive_reflection (reflectionDual_apply_self Q y hy)
@@ -64,6 +88,7 @@ private theorem polar_eq_two_mul_associated (Q : QuadraticForm F V) (x y : V) :
   rw [this]
   simp only [associated_apply, Module.End.smul_def, nsmul_eq_mul, Nat.cast_ofNat]
 
+/-- Quadratic reflections preserve the quadratic form -/
 theorem qReflection_isometry (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) (x : V) :
     Q (qReflection Q y hy x) = Q x := by
   rw [qReflection_apply]
@@ -74,12 +99,14 @@ theorem qReflection_isometry (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) (x
   field_simp
   ring
 
+/-- A quadratic reflection as an isometry equivalence -/
 def qReflectionIsometryEquiv (Q : QuadraticForm F V) (y : V) (hy : Q y ≠ 0) :
     Q.IsometryEquiv Q where
   toLinearEquiv := qReflection Q y hy
   map_app' := qReflection_isometry Q y hy
 
 omit [Invertible (2 : F)] in
+/-- The parallelogram identity: Q(x+y) + Q(x-y) = 2(Q(x) + Q(y)) -/
 theorem four_squares_identity (Q : QuadraticForm F V) (x y : V) :
     Q (x + y) + Q (x - y) = 2 * (Q x + Q y) := by
   have h1 := QuadraticMap.map_add (⇑Q) x y
@@ -90,6 +117,7 @@ theorem four_squares_identity (Q : QuadraticForm F V) (x y : V) :
     ring
   rw [h1, h2]; ring
 
+/-- Reflection through x - y sends x to y when Q(x) = Q(y) -/
 theorem qReflection_sub_sends_to
     (Q : QuadraticForm F V) (x y : V)
     (heq : Q x = Q y) (hne : Q (x - y) ≠ 0) :
@@ -113,6 +141,7 @@ theorem qReflection_sub_sends_to
   field_simp
   simp_all only [associated_apply, ne_eq, mul_eq_zero, not_or, not_false_eq_true, div_self]
 
+/-- Given Q(x) = Q(y) ≠ 0, there exists an isometry sending x to y -/
 def exists_isometry_of_eq_value
     (Q : QuadraticForm F V) (x y : V) (heq : Q x = Q y) (hne : Q x ≠ 0) :
     Σ' τ : Q.IsometryEquiv Q, τ x = y := by
@@ -155,6 +184,9 @@ def exists_isometry_of_eq_value
     change qReflection Q y hqy (qReflection Q (x + y) hsum x) = y
     rw [h_sends_neg, h_final]
 
+/-! ## Cancellation -/
+
+/-- Given an isometry a·x² ⊕ q₁ ≅ a·x² ⊕ q₂, find one that fixes the generator (1, 0) -/
 def exists_isometry_fixing_generator
     (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂)
     (a : F) (ha : a ≠ 0)
@@ -177,6 +209,7 @@ def exists_isometry_fixing_generator
   have heq : Q₂ (φ e₁) = Q₂ e₂ := by rw [hval_φe₁, hval_e₂]
   exact exists_isometry_of_eq_value Q₂ (φ e₁) e₂ heq hne
 
+/-- An isometry fixing the generator restricts to an isometry of the complements -/
 def isometry_fixing_generator_restricts
     (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂)
     (a : F) (ha : a ≠ 0)
@@ -230,6 +263,7 @@ def isometry_fixing_generator_restricts
   have hψ_surj := (ψ_rest.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hψ_inj
   exact ⟨LinearEquiv.ofBijective ψ_rest ⟨hψ_inj, hψ_surj⟩, fun v => preserves v⟩
 
+/-- One-dimensional cancellation: a·x² ⊕ q₁ ≅ a·x² ⊕ q₂ implies q₁ ≅ q₂ -/
 def cancel_one_dim
     (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂)
     (a : F) (ha : a ≠ 0)
@@ -240,6 +274,7 @@ def cancel_one_dim
   exact isometry_fixing_generator_restricts q₁ q₂ a ha (h.trans τ) hτ
 
 omit [FiniteDimensional F V₁] [FiniteDimensional F V₂] in
+/-- Associativity of products of quadratic forms -/
 def isometryEquivProdAssoc
     (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂) (q₃ : QuadraticForm F V) :
     ((q₁.prod q₂).prod q₃).IsometryEquiv (q₁.prod (q₂.prod q₃)) where
@@ -249,6 +284,7 @@ def isometryEquivProdAssoc
     simp [QuadraticMap.prod_apply, add_assoc]
 
 omit [FiniteDimensional F V₁] in
+/-- The zero quadratic form is a left identity for products -/
 def isometryEquivZeroProd
     (q : QuadraticForm F V₁) :
     ((0 : QuadraticForm F (Fin 0 → F)).prod q).IsometryEquiv q where
@@ -398,6 +434,7 @@ private def weightedSumSquares_succ_equiv (n : ℕ) (w : Fin (n + 1) → F) :
     simp_rw [Fin.sum_univ_succ, Nat.succ_eq_add_one]
     rfl
 
+/-- Cancellation for weighted sums of squares by induction on dimension -/
 def witt_cancel_wss
     (n : ℕ) (w : Fin n → F)
     (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂)
@@ -431,6 +468,7 @@ def witt_cancel_wss
       · exact cancel_one_dim _ _ (w 0) hw0 h''
     exact ih w' h_inner
 
+/-- Witt's cancellation theorem: q ⊕ q₁ ≅ q ⊕ q₂ implies q₁ ≅ q₂ -/
 def witt_cancellation
     (q : QuadraticForm F V₀) (q₁ : QuadraticForm F V₁) (q₂ : QuadraticForm F V₂)
     (h : (q.prod q₁).IsometryEquiv (q.prod q₂)) :

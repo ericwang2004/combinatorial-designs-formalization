@@ -3,6 +3,28 @@ import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Matrix.IsDiag
 import CombinatorialDesign.MatrixCongruence
 
+/-!
+# Diagonalizability of Bilinear Forms and Matrices
+
+This file proves that a bilinear form over a field of characteristic ≠ 2 is diagonalizable
+if and only if it is symmetric, and develops the corresponding matrix theory.
+
+## Main Definitions
+
+* `IsDiagonalWrt B b` - A bilinear form B is diagonal with respect to a basis b
+* `IsDiagonalizable B` - A bilinear form B admits some basis making it diagonal
+* `Matrix.IsDiagonalizable' M` - A matrix is diagonalizable via congruence
+* `Matrix.DiagonalForm M hM` - The diagonal form of a symmetric matrix under congruence
+
+## Main Results
+
+* `diagonalizable_iff_isSymm` - A bilinear form is diagonalizable iff it is symmetric
+* `Matrix.isDiagonalizable'_iff_isSymm` - A matrix is congruence-diagonalizable iff symmetric
+* `nondegenerate_iff_diag_ne_zero` - A diagonal form is nondegenerate iff all diagonal entries are nonzero
+* `Matrix.invertible_iff_diagEntries_ne_zero` - A symmetric matrix is invertible iff its diagonal form has no zero entries
+* `symm_matCongr_diagonalForm` - Every symmetric matrix is congruent to its diagonal form
+-/
+
 open LinearMap (BilinForm)
 open Submodule FiniteDimensional BilinForm Module Matrix
 
@@ -10,13 +32,16 @@ variable {F : Type*} [Field F] [NeZero (2 : F)]
 variable {V : Type*} [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 
+/-- A bilinear form is diagonal with respect to a basis if off-diagonal entries vanish -/
 def IsDiagonalWrt  (B : BilinForm F V) (b : Basis ι F V) : Prop :=
   ∀ i j, i ≠ j → B (b i) (b j) = 0
 
+/-- A bilinear form is diagonalizable if there exists a basis making it diagonal -/
 def IsDiagonalizable (B : BilinForm F V) : Prop :=
   ∃ (ι : Type) (_ : Fintype ι) (b : Basis ι F V), IsDiagonalWrt B b
 
 omit [FiniteDimensional F V] [NeZero (2 : F)] in
+/-- A diagonalizable bilinear form is symmetric -/
 theorem IsDiagonalizable.isSymm (B : BilinForm F V) (hdiag : IsDiagonalizable B) :
     B.IsSymm := by
   obtain ⟨ι, _, b, hd⟩ := hdiag
@@ -28,7 +53,7 @@ theorem IsDiagonalizable.isSymm (B : BilinForm F V) (hdiag : IsDiagonalizable B)
     rw [hd i j hij, hd j i hij.symm ]
 
 omit [NeZero (2 : F)] in
-/-- `v ≠ 0` ve `B(v,v) ≠ 0` ise `dim(v⊥) < dim(V)`. -/
+/-- If v ≠ 0 and B(v,v) ≠ 0, then dim(v⊥) < dim(V) -/
 theorem finrank_orthogonal_lt
     (B : BilinForm F V)
     (v : V) (hv0 : v ≠ 0) (hv : B v v ≠ 0) :
@@ -41,6 +66,7 @@ theorem finrank_orthogonal_lt
   have h1 : finrank F (span F ({v} : Set V)) = 1 := finrank_span_singleton hv0
   omega
 
+/-- A symmetric bilinear form is diagonalizable (over a field of characteristic ≠ 2) -/
 theorem IsSymm.isDiagonalizable (B : BilinForm F V) (hsymm : B.IsSymm) :
     IsDiagonalizable B := by
   induction hn : finrank F V using Nat.strongRecOn generalizing V with
@@ -96,10 +122,18 @@ theorem IsSymm.isDiagonalizable (B : BilinForm F V) (hsymm : B.IsSymm) :
         have := hdiagW k k' hne
         rwa [BilinForm.restrict_apply] at this
 
+/-- A bilinear form is diagonalizable if and only if it is symmetric -/
 theorem diagonalizable_iff_isSymm (B : BilinForm F V) :
     IsDiagonalizable B ↔ B.IsSymm :=
   ⟨IsDiagonalizable.isSymm B, IsSymm.isDiagonalizable B⟩
 
+/-! ## Matrix Diagonalizability
+
+We transfer the bilinear form results to matrices, showing that a matrix is
+diagonalizable if and only if it is symmetric.
+-/
+
+/-- A matrix is diagonalizable if its associated bilinear form is -/
 def Matrix.IsDiagonalizable' {n : Type*} [Fintype n] [DecidableEq n]
     (M : Matrix n n F) : Prop :=
   IsDiagonalizable (Matrix.toBilin' M)
@@ -107,6 +141,7 @@ def Matrix.IsDiagonalizable' {n : Type*} [Fintype n] [DecidableEq n]
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 omit [NeZero (2 : F)] in
+/-- The bilinear form of a matrix is symmetric iff the matrix is symmetric -/
 theorem Matrix.toBilin'_isSymm_iff (M : Matrix n n F) :
     (Matrix.toBilin' M).IsSymm ↔ M.IsSymm := by
   rw [BilinForm.isSymm_iff_basis (Pi.basisFun F n)]
@@ -118,10 +153,12 @@ theorem Matrix.toBilin'_isSymm_iff (M : Matrix n n F) :
   · intro h i j
     exact h.apply j i
 
+/-- A matrix is diagonalizable if and only if it is symmetric -/
 theorem Matrix.isDiagonalizable'_iff_isSymm (M : Matrix n n F) :
     M.IsDiagonalizable' ↔ M.IsSymm := by
   rw [Matrix.IsDiagonalizable', diagonalizable_iff_isSymm, Matrix.toBilin'_isSymm_iff]
 
+/-- A basis that diagonalizes a symmetric matrix, reindexed to match the original type -/
 noncomputable def Matrix.symmDiagBasis (M : Matrix n n F) (hM : M.IsSymm) :
     Basis n F (n → F) := by
   have h := (Matrix.isDiagonalizable'_iff_isSymm M).mpr hM
@@ -131,6 +168,7 @@ noncomputable def Matrix.symmDiagBasis (M : Matrix n n F) (hM : M.IsSymm) :
   exact b.reindex (Fintype.equivOfCardEq
     ((finrank_eq_card_basis b).symm.trans (finrank_eq_card_basis (Pi.basisFun F n))))
 
+/-- The diagonalizing basis for a symmetric matrix is indeed diagonal with respect to it -/
 theorem Matrix.symmDiagBasis_isDiagonalWrt (M : Matrix n n F) (hM : M.IsSymm) :
     IsDiagonalWrt (Matrix.toBilin' M) (Matrix.symmDiagBasis M hM) := by
   intro i j hij
@@ -139,17 +177,26 @@ theorem Matrix.symmDiagBasis_isDiagonalWrt (M : Matrix n n F) (hM : M.IsSymm) :
   exact h.choose_spec.choose_spec.choose_spec _ _
     (fun heq => hij (Equiv.injective _ heq))
 
+/-- The diagonal form of a symmetric matrix: the diagonal matrix congruent to M -/
 noncomputable def Matrix.DiagonalForm (M : Matrix n n F) (hM : M.IsSymm) :
     Matrix n n F :=
   let b := Matrix.symmDiagBasis M hM
   diagonal (fun i => Matrix.toBilin' M (b i) (b i))
 
+/-- The diagonal form of a symmetric matrix is indeed a diagonal matrix -/
 theorem Matrix.DiagonalForm_isDiag (M : Matrix n n F) (hM : M.IsSymm) :
     (Matrix.DiagonalForm M hM).IsDiag := by
   intro i j hij
   simp only [Matrix.DiagonalForm, diagonal_apply, if_neg hij]
 
+/-! ## Nondegeneracy and Invertibility
+
+We characterize nondegeneracy of a diagonal bilinear form and invertibility of a symmetric
+matrix in terms of their diagonal entries.
+-/
+
 omit [NeZero (2 : F)] [FiniteDimensional F V] in
+/-- A diagonal bilinear form is nondegenerate iff all diagonal entries are nonzero -/
 theorem nondegenerate_iff_diag_ne_zero
     {B : BilinForm F V} {b : Basis ι F V}
     (hdiag : IsDiagonalWrt B b) :
@@ -184,6 +231,7 @@ theorem nondegenerate_iff_diag_ne_zero
       (fun h => absurd (Finset.mem_univ i) h)] at hbi
     exact hd i (mul_eq_zero.mp hbi |>.resolve_left hi)
 
+/-- A symmetric matrix is invertible iff its diagonal form has all nonzero diagonal entries -/
 theorem Matrix.invertible_iff_diagEntries_ne_zero (M : Matrix n n F) (hM : M.IsSymm) :
     Nonempty (Invertible M) ↔ ∀ i, (Matrix.DiagonalForm M hM) i i ≠ 0 := by
   simp only [Matrix.DiagonalForm, diagonal_apply_eq]
@@ -197,8 +245,11 @@ theorem Matrix.invertible_iff_diagEntries_ne_zero (M : Matrix n n F) (hM : M.IsS
       Matrix.nondegenerate_toBilin'_iff]]
   exact nondegenerate_iff_diag_ne_zero hdiag
 
+/-! ## Congruence to Diagonal Form -/
+
 open MatCongr
 
+/-- Every symmetric matrix is congruent to its diagonal form -/
 noncomputable def symm_matCongr_diagonalForm
     (M : Matrix n n F) (hM : M.IsSymm) :
     M ∼ₘ Matrix.DiagonalForm M hM := by

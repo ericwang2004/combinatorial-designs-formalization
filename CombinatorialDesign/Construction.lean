@@ -2,17 +2,24 @@ import CombinatorialDesign.SymmetricBIBD
 import Mathlib.Tactic.Linarith
 
 /-!
-
-# Construction of designs
+# Construction of Designs
 
 This file defines several ways of constructing designs from other designs.
-These include:
-  * Sum
-  * Complement
-  * Derived
-  * Residual
-  * Difference set
 
+## Main Definitions
+
+* Sum construction - combines two designs over disjoint index types, adding their parameters
+* Complement construction - replaces each block with its complement in the point set
+* Derived and residual constructions - restrict a symmetric BIBD to or away from a given block
+* Difference set construction - builds a symmetric BIBD from a difference set over an abelian group
+
+## Main Results
+
+* `blocks_distinct_of_fromDifferenceSet` - Blocks of a difference set design are all distinct
+
+## References
+
+* Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
 open CombinatorialDesign
@@ -24,11 +31,18 @@ variable {ι ι₁ ι₂ X : Type*} [Fintype X] [DecidableEq X]
 open Finset
 
 
--- ## Sum construction
+/-! ## Sum Construction
 
+The sum of two designs combines their blocks over a disjoint union of index types.
+The resulting design inherits uniformity, regularity, and balance properties, with
+parameters adding accordingly.
+-/
+
+/-- The sum of two designs over a disjoint union of index types -/
 def Design.sum (Φ₁ : Design ι₁ X) (Φ₂ : Design ι₂ X) : Design (ι₁ ⊕ ι₂) X where
   blocks := Sum.elim Φ₁.blocks Φ₂.blocks
 
+/-- The sum of two block designs, preserving block size k -/
 def BlockDesign.sum (Φ₁ : BlockDesign ι₁ X k) (Φ₂ : BlockDesign ι₂ X k) : BlockDesign (ι₁ ⊕ ι₂) X k where
   toDesign := Design.sum Φ₁.toDesign Φ₂.toDesign
   uniform u := by
@@ -36,6 +50,7 @@ def BlockDesign.sum (Φ₁ : BlockDesign ι₁ X k) (Φ₂ : BlockDesign ι₂ X
     | inl => simpa using Φ₁.uniform _
     | inr => simpa using Φ₂.uniform _
 
+/-- The sum of two regular designs with regularities r₁ and r₂ gives regularity r₁ + r₂ -/
 def RegularDesign.sum (Φ₁ : RegularDesign ι₁ X r₁) (Φ₂ : RegularDesign ι₂ X r₂) :
     RegularDesign (ι₁ ⊕ ι₂) X (r₁ + r₂) where
   toDesign := Design.sum Φ₁.toDesign Φ₂.toDesign
@@ -46,6 +61,7 @@ def RegularDesign.sum (Φ₁ : RegularDesign ι₁ X r₁) (Φ₂ : RegularDesig
     simp only [Design.sum, mem_disjSum, mem_filter, mem_univ, true_and]
     cases u <;> simp
 
+/-- The sum of two balanced designs with parameters λ₁ and λ₂ gives balance parameter λ₁ + λ₂ -/
 def BalancedDesign.sum (Φ₁ : BalancedDesign ι₁ X t l₁) (Φ₂ : BalancedDesign ι₂ X t l₂) :
     BalancedDesign (ι₁ ⊕ ι₂) X t (l₁ + l₂) where
   toDesign := Design.sum Φ₁.toDesign Φ₂.toDesign
@@ -56,30 +72,40 @@ def BalancedDesign.sum (Φ₁ : BalancedDesign ι₁ X t l₁) (Φ₂ : Balanced
     simp only [Design.sum, mem_disjSum, mem_filter, mem_univ, true_and]
     cases u <;> simp
 
+/-- The sum of two incomplete designs, preserving block size k -/
 def IncompleteDesign.sum (Φ₁ : IncompleteDesign ι₁ X k) (Φ₂ : IncompleteDesign ι₂ X k) :
     IncompleteDesign (ι₁ ⊕ ι₂) X k where
   toBlockDesign := BlockDesign.sum Φ₁.toBlockDesign Φ₂.toBlockDesign
   incomplete := Φ₁.incomplete
 
+/-- The sum of two RPBDs, adding both balance and regularity parameters -/
 def RPBD.sum (Φ₁ : RPBD ι₁ X l₁ r₁) (Φ₂ : RPBD ι₂ X l₂ r₂) :
     RPBD (ι₁ ⊕ ι₂) X (l₁ + l₂) (r₁ + r₂) where
   toRegularDesign := RegularDesign.sum Φ₁.toRegularDesign Φ₂.toRegularDesign
   balance := (BalancedDesign.sum Φ₁.toBalancedDesign Φ₂.toBalancedDesign).balance
 
+/-- The sum of two t-designs with the same t and k, adding λ parameters -/
 def TDesign.sum (Φ₁ : TDesign ι₁ X k t l₁) (Φ₂ : TDesign ι₂ X k t l₂) :
     TDesign (ι₁ ⊕ ι₂) X k t (l₁ + l₂) where
   toIncompleteDesign := IncompleteDesign.sum Φ₁.toIncompleteDesign Φ₂.toIncompleteDesign
   balance := (BalancedDesign.sum Φ₁.toBalancedDesign Φ₂.toBalancedDesign).balance
   t_le_k := Φ₁.t_le_k
 
+/-- The sum of two BIBDs with the same k, adding λ parameters -/
 def BIBD.sum (Φ₁ : BIBD ι₁ X k l₁) (Φ₂ : BIBD ι₂ X k l₂) :
     BIBD (ι₁ ⊕ ι₂) X k (l₁ + l₂) := TDesign.sum Φ₁ Φ₂
 
--- ## Complement construction
+/-! ## Complement Construction
 
+The complement of a design replaces each block B with its complement X \ B.
+This preserves the index type and adjusts block size, regularity, and balance parameters.
+-/
+
+/-- The complement of a design, replacing each block B with X \ B -/
 def Design.complement (Φ : Design ι X) : Design ι X where
   blocks := (Φ.blocks ·)ᶜ
 
+/-- The complement of a block design with block size v - k -/
 def BlockDesign.complement (Φ : BlockDesign ι X k) :
     BlockDesign ι X (Fintype.card X - k) where
   toDesign := Design.complement Φ.toDesign
@@ -87,6 +113,7 @@ def BlockDesign.complement (Φ : BlockDesign ι X k) :
     have h := Φ.uniform i
     simpa [← h] using card_compl (Φ.blocks i)
 
+/-- The complement of a regular design with regularity b - r -/
 def RegularDesign.complement (Φ : RegularDesign ι X r₁) :
     RegularDesign ι X (Fintype.card ι - r₁) where
   blocks := (Φ.blocks ·)ᶜ
@@ -97,6 +124,7 @@ def RegularDesign.complement (Φ : RegularDesign ι X r₁) :
     ext i
     simp
 
+/-- The complement of a BIBD is a BIBD with block size v - k and adjusted λ -/
 def BIBD.complement [Inhabited X] (Φ : BIBD ι X k l) (hyp : (Fintype.card X) - k ≥ 2) :
     BIBD ι X ((Fintype.card X) - k) ((Fintype.card ι) - (2 * rep Φ - l)) where
   blocks := (Φ.blocks ·)ᶜ
@@ -129,8 +157,15 @@ def BIBD.complement [Inhabited X] (Φ : BIBD ι X k l) (hyp : (Fintype.card X) -
     rw [hgoal, card_compl, hunion]
 
 
--- ## Derived and residual constructions
+/-! ## Derived and Residual Constructions
 
+Given a symmetric BIBD with point set X = ι and a block B_{i₀}, the **derived design** restricts
+to points in B_{i₀} and blocks B_i ∩ B_{i₀}, while the **residual design** restricts to points
+outside B_{i₀} and blocks B_i \ B_{i₀}.
+-/
+
+/-- The derived design of a symmetric BIBD at block i₀: a BIBD on the points of B_{i₀}
+    with blocks B_i ∩ B_{i₀} for i ≠ i₀ -/
 def derived [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hl : 2 ≤ l) :
     BIBD {i // i ≠ i₀} {x // x ∈ Φ.blocks i₀} l (l - 1) where
   blocks i := map (Subtype.impEmbedding _ _ inter_subset_right) (Φ.blocks i ∩ Φ.blocks i₀).attach
@@ -173,6 +208,8 @@ def derived [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hl : 2 ≤ l) :
       · exact ⟨x.val, ⟨hx, x.property⟩, Subtype.ext rfl⟩
       · exact ⟨y.val, ⟨hy, y.property⟩, Subtype.ext rfl⟩
 
+/-- The residual design of a symmetric BIBD at block i₀: a BIBD on the points outside B_{i₀}
+    with blocks B_i \ B_{i₀} for i ≠ i₀ -/
 def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
     BIBD {i // i ≠ i₀} {x // x ∉ Φ.blocks i₀} (k - l) l where
   blocks i := map
@@ -229,8 +266,13 @@ def residual [Inhabited X] (Φ : BIBD X X k l) (i₀ : X) (hkl : 2 ≤ k - l) :
 
 variable {G : Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
 
--- ## Difference set construction
+/-! ## Difference Set Construction
 
+A (v, k, λ)-difference set D in an abelian group G of order v gives rise to a symmetric
+BIBD whose blocks are the translates g + D for g ∈ G.
+-/
+
+/-- Constructs a symmetric BIBD from a difference set, with blocks as translates g + D -/
 def fromDifferenceSet (D : differenceSet ι G l) :
     BIBD G G (Fintype.card ι) l where
   blocks g := {g + x | x ∈ image D.elems univ}
@@ -274,6 +316,7 @@ def fromDifferenceSet (D : differenceSet ι G l) :
       · rw [←hi]; abel
 
 omit [DecidableEq ι] in
+/-- Distinct group elements produce distinct blocks in a difference set design -/
 theorem blocks_distinct_of_fromDifferenceSet (D : differenceSet ι G l) :
     ∀ i j, i ≠ j →
     (fromDifferenceSet D).blocks i ≠ (fromDifferenceSet D).blocks j := by

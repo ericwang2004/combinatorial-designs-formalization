@@ -1,12 +1,24 @@
 import CombinatorialDesign.IncidenceMatrix
 
 /-!
+# Hadamard Matrices
 
-# Hadamard matrices
+This file defines Hadamard matrices and proves that the order of any Hadamard matrix
+with at least 3 rows must be a multiple of 4.
 
-This files defines Hadamard matrices and proves that
-the dimension of any Hadamard matrix must be a multiple of 4.
+## Main Definitions
 
+* `isHadamard M` - A matrix with ±1 entries satisfying M · Mᵀ = n · I
+* `isStandardHadamard i M` - A Hadamard matrix whose row i is all 1s
+* `scaleRow c i M` - The matrix obtained by scaling row i of M by c
+
+## Main Results
+
+* `isHadamard_of_scaleRow` - Scaling a row by -1 preserves the Hadamard property
+* `exists_standard_hadamard` - Any Hadamard matrix can be standardized at any row
+* `even_of_sum_zero` - If a ±1 function sums to zero, the domain has even cardinality
+* `four_div_helper` - Two orthogonal ±1 functions with zero sums imply 4 divides the domain size
+* `four_div_of_hadamard` - The order of a Hadamard matrix with ≥ 3 rows is divisible by 4
 -/
 
 open CombinatorialDesign Matrix Finset
@@ -14,29 +26,26 @@ namespace CombinatorialDesign
 
 variable {ι α : Type*} [Fintype ι] [DecidableEq ι] [CommRing α] [DecidableEq α]
 
+/-! ## Definitions -/
+
+/-- A matrix is Hadamard if all entries are ±1 and M · Mᵀ = n · I -/
 def isHadamard (M : Matrix ι ι α) : Prop :=
   (∀ i j, M i j = 1 ∨ M i j = -1) ∧
   M * Mᵀ = (Fintype.card ι) • 1
 
--- a standard Hadamard matrix is one whose (say, first) row is all 1s
+/-- A standard Hadamard matrix is one whose designated row is all 1s -/
 def isStandardHadamard (i : ι) (M : Matrix ι ι α) : Prop :=
   isHadamard M ∧
   (∀ j, M i j = 1)
 
+/-- Scale row i of a matrix by the scalar c -/
 def scaleRow (c : α) (i : ι) (M : Matrix ι ι α) : Matrix ι ι α :=
   M.updateRow i (fun j ↦ c * M i j)
 
-/-
-Proof sketch for `isHadamard_of_scaleRow`:
-Scaling row i₀ by -1 preserves the Hadamard property.
-1. Entries remain ±1: If M[i,j] ∈ {1,-1}, then -M[i,j] ∈ {-1,1}.
-2. The product M·Mᵀ is unchanged because in each dot product of rows i and j:
-   - If neither i nor j is i₀, the dot product is unchanged.
-   - If exactly one of i,j is i₀, the dot product gains a factor of (-1)(-1)=1
-     from the row and its transpose column.
-   - If both are i₀ (i.e., the diagonal), each term is multiplied by (-1)²=1.
--/
+/-! ## Standardization -/
+
 omit [DecidableEq α] in
+/-- Scaling a row by -1 preserves the Hadamard property -/
 theorem isHadamard_of_scaleRow {M : Matrix ι ι α} (hM : isHadamard M) (i₀ : ι) :
     isHadamard (scaleRow (-1) i₀ M) := by
   obtain ⟨mvals, mprod⟩ := hM
@@ -64,16 +73,8 @@ theorem isHadamard_of_scaleRow {M : Matrix ι ι α} (hM : isHadamard M) (i₀ :
             mprod', if_neg hi₀, smul_zero, mul_zero]
         · simp_rw [if_neg hj₀, mprod', if_neg hij]
 
-/-
-Proof sketch for `exists_standard_hadamard`:
-Any Hadamard matrix can be normalized so that a given row i₀ is all 1s.
-Define N[i,j] = M[i,j] · M[i₀,j] (multiply each column by the sign of its entry in row i₀).
-1. Entries of N are ±1: products of ±1 values.
-2. Row i₀ of N is all 1s: M[i₀,j]² = 1 for all j.
-3. N·Nᵀ = n·I: The (i,j) entry of N·Nᵀ is ∑ₖ M[i,k]·M[i₀,k]·M[j,k]·M[i₀,k]
-   = ∑ₖ M[i,k]·M[j,k]·(M[i₀,k])² = ∑ₖ M[i,k]·M[j,k] = (M·Mᵀ)[i,j].
--/
 omit [DecidableEq α] in
+/-- Any Hadamard matrix can be standardized at any row by column sign-flips -/
 theorem exists_standard_hadamard {M : Matrix ι ι α} (hM : isHadamard M) :
     ∀ i, ∃ N : Matrix ι ι α, isStandardHadamard i N := by
   intro i₀
@@ -92,13 +93,9 @@ theorem exists_standard_hadamard {M : Matrix ι ι α} (hM : isHadamard M) :
       simp only [mul_apply, transpose_apply, smul_apply, one_apply] at h; exact h
   · rcases mvals i₀ j with h | h <;> simp [h]
 
-/-
-Proof sketch for `even_of_sum_zero`:
-If f : ι → {1,-1} and ∑ᵢ f(i) = 0, then |ι| is even.
-Partition ι into S = {i : f(i)=1} and T = {i : f(i)=-1}.
-Then ∑ᵢ f(i) = |S| - |T| = 0, so |S| = |T|.
-Hence |ι| = |S| + |T| = 2|T|, which is even.
--/
+/-! ## Divisibility of the Order -/
+
+/-- If a ±1-valued function sums to zero, the domain has even cardinality -/
 theorem even_of_sum_zero [CharZero α] {f : ι → α} (hf : ∀ i, f i = 1 ∨ f i = -1)
     (hsum : ∑ i, f i = 0) : 2 ∣ Fintype.card ι := by
   let S := Finset.univ.filter (fun i => f i = 1)
@@ -125,17 +122,7 @@ theorem even_of_sum_zero [CharZero α] {f : ι → α} (hf : ∀ i, f i = 1 ∨ 
     rw [← Finset.card_union_of_disjoint hST_disjoint, hST_cover, Finset.card_univ]
   rw [htotal, hcard_eq]; exact ⟨T.card, by ring⟩
 
-/-
-Proof sketch for `four_div_helper`:
-Given f,g : ι → {1,-1} with ∑f = ∑g = ∑(f·g) = 0, we show 4 | |ι|.
-Partition ι into four sets based on signs:
-  A = {f=1, g=1}, B = {f=1, g=-1}, C = {f=-1, g=1}, D = {f=-1, g=-1}.
-Then |ι| = |A| + |B| + |C| + |D|. From the three sum conditions:
-  ∑f = 0  ⟹  |A| + |B| - |C| - |D| = 0  ⟹  |A| + |B| = |C| + |D|
-  ∑g = 0  ⟹  |A| - |B| + |C| - |D| = 0  ⟹  |A| + |C| = |B| + |D|
-  ∑fg = 0 ⟹  |A| - |B| - |C| + |D| = 0  ⟹  |A| + |D| = |B| + |C|
-Solving: |A| = |B| = |C| = |D|, so |ι| = 4|A|.
--/
+/-- Two orthogonal ±1 functions with zero sums imply 4 divides the domain size -/
 theorem four_div_helper [CharZero α] {f g : ι → α}
     (hf : ∀ i, f i = 1 ∨ f i = -1)
     (hg : ∀ i, g i = 1 ∨ g i = -1)
@@ -205,16 +192,7 @@ theorem four_div_helper [CharZero α] {f g : ι → α}
     simp only [← Nat.cast_add] at h; exact Nat.cast_injective h
   rw [htotal]; omega
 
-/-
-Proof sketch for `four_div_of_hadamard`:
-If an n×n Hadamard matrix exists with n > 2, then 4 | n.
-Given three distinct indices i₀, j₀, k₀, normalize M so row i₀ is all 1s (call it N).
-Since N·Nᵀ = n·I, for distinct rows:
-  - Row i₀ · Row j₀ = 0: ∑ₖ 1·N[j₀,k] = ∑ₖ N[j₀,k] = 0
-  - Row i₀ · Row k₀ = 0: ∑ₖ N[k₀,k] = 0
-  - Row j₀ · Row k₀ = 0: ∑ₖ N[j₀,k]·N[k₀,k] = 0
-Apply `four_div_helper` with f = N[j₀,·] and g = N[k₀,·].
--/
+/-- The order of a Hadamard matrix with at least 3 rows is divisible by 4 -/
 theorem four_div_of_hadamard [CharZero α] {i₀ j₀ k₀ : ι}
     (hij : i₀ ≠ j₀) (hik : i₀ ≠ k₀) (hjk : j₀ ≠ k₀)
     {M : Matrix ι ι α} (hM : isHadamard M) :

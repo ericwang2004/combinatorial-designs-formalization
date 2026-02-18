@@ -26,7 +26,9 @@ constructing t-designs using group actions.
 
 ## References
 
+* Stinson, Combinatorial Designs, Constructions and Analysis
 * E. Kramer and D. Mesner, "t-designs on hypergraphs", Discrete Math. 15 (1976) 263-296
+
 -/
 
 open CombinatorialDesign Finset MulAction Quotient

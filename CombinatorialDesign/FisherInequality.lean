@@ -2,12 +2,21 @@ import CombinatorialDesign.IncidenceMatrix
 import CombinatorialDesign.MatrixLemmas
 
 /-!
+# Fisher's Inequality
 
-# Fisher's inequality
+This file proves Fisher's inequality: in a nontrivial RPBD, the number of blocks b is at
+least the number of points v.
 
-This file proves the following theorem:
-Thm (Fisher). In a (v, k, λ, b, r)-BIBD, v ≤ b.
+## Main Results
 
+* `l_lt_r_of_nontrivialRPBD` - In a nontrivial RPBD, λ < r
+* `b_ge_rank_ge_v_of_nontrivialRPBD` - Fisher's inequality: b ≥ rank(M) ≥ v
+* `rank_eq_v_of_symmNontrivialRPBD` - The incidence matrix of a symmetric nontrivial RPBD has
+  rank v
+
+## References
+
+* Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
 open CombinatorialDesign Matrix Finset
@@ -16,6 +25,7 @@ variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] [DecidableEq ι
 namespace CombinatorialDesign
 
 omit [DecidableEq ι]
+/-- In a nontrivial RPBD, the balance parameter λ is strictly less than the regularity r -/
 theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
   obtain ⟨i, hi₀, hi₁⟩ := Φ.nontrivial
   obtain ⟨x, hx⟩ := card_pos.mp hi₀
@@ -29,7 +39,7 @@ theorem l_lt_r_of_nontrivialRPBD (Φ : nontrivialRPBD ι X l r) : l < r := by
         exact fun _ hy' ↦ (mem_compl.mp hy) hy'⟩⟩
     _ = r := Φ.regularity x
 
-/-- ### Fisher's Inequality -/
+/-- Fisher's inequality: for a nontrivial RPBD, b ≥ rank(M) ≥ v -/
 private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α : Type*) [Field α]
     [LinearOrder α] [IsStrictOrderedRing α]
     (Φ : nontrivialRPBD ι X l r) : let M := toIncMat α Φ.toDesign
@@ -54,6 +64,7 @@ private theorem b_ge_rank_ge_v_of_nontrivialRPBD (α : Type*) [Field α]
     · rw [Nat.cast_smul_eq_nsmul]
     · rw [←Nat.cast_sub l_le_r, Nat.cast_smul_eq_nsmul]
 
+/-- The incidence matrix of a symmetric nontrivial RPBD has rank v -/
 theorem rank_eq_v_of_symmNontrivialRPBD (α : Type*) [Field α]
     [LinearOrder α] [IsStrictOrderedRing α]
     (Φ : nontrivialRPBD X X l r) : rank (toIncMat α Φ.toDesign) = (Fintype.card X) := by

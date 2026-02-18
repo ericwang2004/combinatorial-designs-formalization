@@ -3,25 +3,35 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.NumberTheory.SumFourSquares
 
 /-!
+# Matrix Lemmas
 
-This file proves some lemmas about matrices that are helpful
-for proving Fisher's inequality. Most notably, we prove the
-following theorem:
+This file defines basic matrix utilities and proves lemmas about matrices used in
+Fisher's inequality.
 
-Thm. Let 𝔽 be a field and a, b ∈ 𝔽 with b ≠ 0. Then
-  det (aJ + bI) = bⁿ(1 + an/b),
-where I, J ∈ 𝔽^(n × n) are the identity and all-ones matrices.
+## Main Definitions
 
+* `allOnes` - The all-ones matrix
+* `isZeroOne` - Predicate that a matrix has only 0 and 1 entries
+
+## Main Results
+
+* `det_ones_add_diagonal` - The determinant of aJ + bI equals bⁿ(1 + an/b)
+* `rank_ones_add_diagonal` - The rank of aJ + bI equals n when the determinant is nonzero
+* `isUnit_of_full_rank` - A square matrix with full rank is a unit
+* `eq_of_full_rank_mul_eq` - Left cancellation for full-rank matrices
 -/
 
 open Matrix Finset
 
+/-- The all-ones matrix -/
 def allOnes (m n α : Type*) [One α] : Matrix m n α :=
   of (fun _ _ ↦ 1)
 
+/-- A matrix is 0-1 if every entry is either 0 or 1 -/
 def isZeroOne {m n α : Type*} [One α] [Zero α] (M : Matrix m n α) : Prop :=
   ∀ i j, M i j = 0 ∨ M i j = 1
 
+/-- The determinant of aJ + bI equals bⁿ(1 + an/b) -/
 theorem det_ones_add_diagonal {α : Type*} (n : Type*) [Field α] [Fintype n] [DecidableEq n]
     (a b : α) (hb : b ≠ 0) :
     det (a • allOnes n n α + b • 1) = b ^ Fintype.card n * (1 + a / b * Fintype.card n) := by
@@ -37,6 +47,7 @@ theorem det_ones_add_diagonal {α : Type*} (n : Type*) [Field α] [Fintype n] [D
     sum_const, card_univ, nsmul_eq_mul]
   ring
 
+/-- The rank of aJ + bI equals n when the determinant is nonzero -/
 theorem rank_ones_add_diagonal {n α : Type*} [Field α] [Fintype n] [DecidableEq n]
     (a b : α) (hb : b ≠ 0) (hab : 1 + a / b * Fintype.card n ≠ 0) :
     rank (a • allOnes n n α + b • 1) = Fintype.card n := by
@@ -44,12 +55,14 @@ theorem rank_ones_add_diagonal {n α : Type*} [Field α] [Fintype n] [DecidableE
   rw [isUnit_iff_isUnit_det, det_ones_add_diagonal n a b hb, isUnit_iff_ne_zero]
   exact mul_ne_zero (pow_ne_zero _ hb) hab
 
+/-- A square matrix with full rank is a unit -/
 theorem isUnit_of_full_rank {n α : Type*} [Fintype n] [DecidableEq n] [Field α]
     {A : Matrix n n α} (h : A.rank = Fintype.card n) : IsUnit A := by
   rw [←linearIndependent_rows_iff_isUnit, linearIndependent_iff_card_eq_finrank_span,
     ←h, rank_eq_finrank_span_row]
   rfl
 
+/-- Left cancellation for full-rank matrices -/
 theorem eq_of_full_rank_mul_eq {n m o α : Type*} [Fintype n] [Fintype m] [DecidableEq m] [Fintype o]
     [Field α] {A : Matrix n m α} {B₁ B₂ : Matrix m o α} (f : n ≃ m)
     (rankA : rank A = Fintype.card m) (h : A * B₁ = A * B₂) : B₁ = B₂ := by

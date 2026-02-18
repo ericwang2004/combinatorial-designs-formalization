@@ -1,37 +1,46 @@
 import CombinatorialDesign.Defs
 
 /-!
+# Basic Properties of BIBDs
 
-# Basic properties of BIBDs
+This file proves fundamental parameter relations for balanced incomplete block designs
+using a general double counting principle.
 
-This file proves the following theorems:
-1. In a (v, k, λ)-BIBD, every point occurs in exactly r = λ(v-1)/(k-1) blocks
-2. Every (v, k, λ)-BIBD has exactly vr/k blocks
-In particular, these rely on a general double counting principle
-which we state and prove.
+## Main Definitions
 
-We also prove some trivial inequalities about the parameters
-(v, k, λ, b, r) of BIBDs.
+* `rep_elem Φ x` - The number of blocks containing point x (repetition number)
+* `rep Φ` - The common repetition number of a BIBD (well-defined by `rep_constant`)
 
-# References
-Stinson, Combinatorial Designs, Constructions and Analysis
+## Main Results
 
+* `rep_constant` - Every point of a BIBD occurs in the same number of blocks: (k-1)r = λ(v-1)
+* `blocks_constant` - The number of blocks satisfies kb = vr
+* `eq_of_symmBIBD` - In a symmetric BIBD (b = v), λ(v-1) = k(k-1)
+
+## References
+
+* Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
 open Finset CombinatorialDesign
 namespace CombinatorialDesign
 
+/-! ## Parameter Inequalities
+
+Basic inequalities on the parameters of BIBDs and related designs.
+-/
+
 variable {ι X : Type*} [Fintype X] [Fintype ι] [DecidableEq X] {k l : ℕ} (Φ : BIBD ι X k l)
 
-/-- A BIBD cannot have an empty set of points -/
+/-- A BIBD has a positive number of points -/
 theorem v_pos_of_bibd (Φ : BIBD ι X k l) : Fintype.card X > 0 :=
   lt_of_le_of_lt Φ.t_le_k Φ.incomplete |> lt_trans Nat.zero_lt_two
 
-/-- Every block of a BIBD must be nonempty -/
+/-- The block size of a BIBD is positive -/
 theorem k_pos_of_bibd (Φ : BIBD ι X k l) : 0 < k :=
   Nat.zero_lt_of_lt Φ.t_le_k
 
-/-- A nontrivial RPBD must have at least two points -/
+/-- A nontrivial RPBD has at least two points -/
 theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X ≥ 2 := by
   obtain ⟨i, hi₁, hi₂⟩ := Ψ.nontrivial
   refine (Nat.two_le_iff (Fintype.card X)).mpr ?_
@@ -40,11 +49,11 @@ theorem v_ge_two_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fi
   · intro
     simp_all only [card_pos, Nat.lt_one_iff, card_eq_zero, Finset.not_nonempty_empty]
 
-/-- A nontrivial PBD cannot have an empty set of points -/
+/-- A nontrivial RPBD has a positive number of points -/
 theorem v_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X > 0 :=
   v_ge_two_of_nontrivialRPBD Ψ |> Nat.zero_lt_of_lt
 
-/-- A nontrivail RPBD must have at least one point -/
+/-- A nontrivial RPBD has at least one point -/
 theorem v_ge_one_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : Fintype.card X ≥ 1 :=
   v_ge_two_of_nontrivialRPBD Ψ |> Nat.one_le_of_lt
 
@@ -56,17 +65,17 @@ theorem r_pos_of_nontrivialRPBD {r : ℕ} (Ψ : nontrivialRPBD ι X l r) : r > 0
   use i
   simp only [mem_filter, mem_univ, true_and, hx]
 
-/-- Any BIBD has at least one block -/
+/-- Every block of a BIBD is nonempty -/
 theorem blocks_nonempty (Φ : BIBD ι X k l) (i : ι) :
     (Φ.blocks i).Nonempty := by
   rw [←one_le_card, Φ.uniform i]
   exact Nat.one_le_of_lt Φ.t_le_k
 
-/-- The repetition number of x in a BIBD Φ is the number of blocks which contain x -/
+/-- The repetition number of a point x: the number of blocks containing x -/
 def rep_elem (x : X) := #{i | x ∈ Φ.blocks i}
 
--- ## Some counting principles
-
+/-- Double counting: if every element satisfying P has exactly k elements satisfying Q,
+    then the number of (x, y) pairs satisfying both equals k times the number satisfying P -/
 theorem card_dependent {α β : Type*} [Fintype α] [Fintype β]
     (P : α → Prop) [DecidablePred P]
     (Q : α → β → Prop) [∀ x, DecidablePred (Q x)]
@@ -100,6 +109,7 @@ theorem card_dependent {α β : Type*} [Fintype α] [Fintype β]
       and_true]
     exact ⟨hx, ((g x hx).symm i).property⟩
 
+/-- Swapping the components of a pair preserves cardinality when predicates are equivalent -/
 theorem card_of_swap {α β : Type*} [Fintype α] [Fintype β]
     {P : α → β → Prop} [∀ x, DecidablePred (P x)]
     {Q : β → α → Prop} [∀ y, DecidablePred (Q y)]
@@ -119,7 +129,7 @@ theorem card_of_swap {α β : Type*} [Fintype α] [Fintype β]
     simp only [mem_filter, mem_univ, true_and, exists_prop, and_true]
     exact (hPQ _ _).2 hxy
 
-/-- Every point of a BIBD occurs in the same number of blocks -/
+/-- Every point of a BIBD occurs in the same number of blocks: (k-1)r = λ(v-1) -/
 theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 1) := by
   intro x
   let P₁ : X → Prop := fun y ↦ x ≠ y
@@ -151,30 +161,30 @@ theorem rep_constant : ∀ x, (k - 1) * rep_elem Φ x = l * ((Fintype.card X) - 
     tauto
   rwa [card_of_swap swap_condition, count₂, this] at count₁
 
-/-- Define the common value of the rep_elem to be rep -/
+/-- The common repetition number of a BIBD -/
 def rep [Inhabited X] (Φ : BIBD ι X k l) : ℕ :=
   rep_elem Φ default
 
-/-- (k - 1)r = λ(v - 1) theorem -/
+/-- The relation (k-1)r = λ(v-1) for the common repetition number -/
 theorem rep_property [Inhabited X] (Φ : BIBD ι X k l) :
     (k - 1) * rep Φ =  l * ((Fintype.card X) - 1) := by
   rw [rep, rep_constant]
 
--- ## Some restatements of the above results
-
+/-- The repetition number of any point equals the common repetition number -/
 theorem rep_eq_rep_elem [Inhabited X] : ∀ x, rep_elem Φ x = rep Φ := by
   intro x
   have h := rep_constant Φ x
   rw [←rep_property Φ] at h
   exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.t_le_k) h
 
+/-- Any two points have the same repetition number -/
 theorem rep_elem_eq_rep_elem : ∀ x y, rep_elem Φ x = rep_elem Φ y := by
   intro x y
   have h := rep_constant Φ x
   rw [←rep_constant Φ y] at h
   exact Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_sub_of_lt Φ.t_le_k) h
 
-/-- kb = vr theorem -/
+/-- The number of blocks satisfies kb = vr -/
 theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintype.card X) := by
   intro x
   let P₁ : X → Prop := fun _ ↦ True
@@ -194,11 +204,11 @@ theorem blocks_constant : ∀ x, k * (Fintype.card ι) = rep_elem Φ x * (Fintyp
   have : #(filter P₁ univ) = Fintype.card X := by rw [filter_true, card_univ]
   rwa [this] at count₁
 
--- ## Some restatements of the kb = vr theorem
-
+/-- kb = vr using the common repetition number -/
 theorem kb_eq_repv [Inhabited X] : k * (Fintype.card ι) = rep Φ * (Fintype.card X) := by
   rw [blocks_constant _ (default : X), rep_eq_rep_elem]
 
+/-- A BIBD has b = v if and only if r = k -/
 theorem b_eq_v_iff_rep_eq_k [Inhabited X] : (Fintype.card ι) = (Fintype.card X) ↔ rep Φ = k := by
   have aux := kb_eq_repv Φ
   constructor <;> intro h
@@ -209,57 +219,64 @@ theorem b_eq_v_iff_rep_eq_k [Inhabited X] : (Fintype.card ι) = (Fintype.card X)
   · rw [h] at aux
     exact Nat.eq_of_mul_eq_mul_left (k_pos_of_bibd Φ) aux
 
+/-- In a symmetric BIBD (b = v), λ(v-1) = k(k-1) -/
 theorem eq_of_symmBIBD [Inhabited X] (Φ : BIBD X X k l) : l * ((Fintype.card X) - 1) = k * (k - 1) := by
   rw [←rep_property Φ, (b_eq_v_iff_rep_eq_k Φ).mp rfl, mul_comm]
 
-/-! ### Trivial coercions  -/
+/-! ## Coercions
 
--- BalancedDesign → Design
+Trivial coercions between design structures following the hierarchy.
+-/
+
+/-- BalancedDesign → Design -/
 def BalancedDesign_to_Design {t : ℕ} : (BalancedDesign ι X t l) → (Design ι X) :=
   BalancedDesign.toDesign
 
--- BlockDesign → Design
+/-- BlockDesign → Design -/
 def BlockDesign_to_Design : (BlockDesign ι X k) → (Design ι X) :=
   BlockDesign.toDesign
 
--- RegularDesign → Design
+/-- RegularDesign → Design -/
 def RegularDesign_to_Design {r : ℕ} : (RegularDesign ι X r) → (Design ι X) :=
   RegularDesign.toDesign
 
--- RPBD → BalancedDesign
+/-- RPBD → BalancedDesign -/
 def RPBD_to_BalancedDesign {r : ℕ} : (RPBD ι X l r) → (BalancedDesign ι X 2 l) :=
   RPBD.toBalancedDesign
 
--- RPBD → Design
+/-- RPBD → Design -/
 def RPBD_to_Design {r : ℕ} : (RPBD ι X l r) → (Design ι X) :=
   fun Φ ↦ Φ.toDesign
 
--- BIBD → BalancedDesign
+/-- BIBD → BalancedDesign -/
 def BIBD_to_BalancedDesign : (BIBD ι X k l) → (BalancedDesign ι X 2 l) :=
   fun Φ ↦ Φ.toBalancedDesign
 
--- BIBD → BlockDesign
+/-- BIBD → BlockDesign -/
 def BIBD_to_BlockDesign : (BIBD ι X k l) → (BlockDesign ι X k) :=
   fun Φ ↦ Φ.toIncompleteDesign.toBlockDesign
 
--- BIBD → Design
+/-- BIBD → Design -/
 def BIBD_to_Design : (BIBD ι X k l) → (Design ι X) :=
   fun Φ ↦ Φ.toDesign
 
--- nontrivialRPBD → Design
+/-- nontrivialRPBD → Design -/
 def nontrivialRPBD_to_Design {r : ℕ} : (nontrivialRPBD ι X l r) → (Design ι X) :=
   fun Φ ↦ Φ.toDesign
 
-/-! ### Non-trivial coercions (require regularity proof) -/
+/-! ## Non-trivial Coercions
 
--- A BIBD is also an RPBD
+Coercions that require proving additional properties, such as regularity.
+-/
+
+/-- A BIBD is also an RPBD, with repetition number r -/
 def BIBD_to_RPBD [Inhabited X] (Φ : BIBD ι X k l) :
     RPBD ι X l (rep Φ) where
   blocks := Φ.blocks
   regularity := fun x => rep_eq_rep_elem Φ x
   balance := Φ.balance
 
--- A nonempty BIBD is also a nontrivialRPBD
+/-- A nonempty BIBD is also a nontrivial RPBD -/
 def BIBD_to_nontrivialRPBD [Inhabited X] (Φ : BIBD ι X k l) (i : ι) :
     nontrivialRPBD ι X l (rep Φ) where
   blocks := Φ.blocks

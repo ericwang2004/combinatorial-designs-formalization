@@ -6,29 +6,31 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
+# Matrix Congruence
 
-# Matrix congruence
+This file defines matrix congruence (M ∼ₘ N) and develops its theory, including direct sums,
+Witt cancellation, and the four-squares identity.
 
-This file develops the quadratic form theory that we need to
-prove the Bruck-Ryser-Chowla theorem. (The BRC theorem itself
-is not stated in this file.)
+## Main Definitions
 
-## Main definitions and theorems:
-  * MatCongr -- matrix congruence
-  * matDirectSum -- direct sum of matrices
-  * matCongrOneOfFourDiv -- if n is a multiple of 4, then
-    I ∼ mI for any positive integer m, where I is the n × n
-    identity matrix
-  * oplusLeftCancel -- Witt's cancellation lemma
+* `MatCongr P N` - Matrix congruence: P = A · N · Aᵀ for some invertible A
+* `matDirectSum M N` - The direct sum M ⊕ₘ N of two matrices
 
-Note that the lemmas needed for the Witt cancellation lemma,
-which is a big result, are separately given in the file
-`WittCancellation.lean`.
+## Main Results
 
+* `matCongrOneOfFourDiv` - If 4 | n, then m · I ∼ₘ I for any positive integer m
+* `oplusLeftCancel` - Witt cancellation: M ⊕ₘ N ∼ₘ M ⊕ₘ P implies N ∼ₘ P
+* `matCongr_two_by_two_condition` - A congruence of 2×2 diagonal matrices implies
+  representability of quadratic forms
+
+## Implementation Notes
+
+The lemmas needed for Witt cancellation are in `WittCancellation.lean`.
 -/
 
 open Matrix Finset
 
+/-- Matrix congruence: P ∼ₘ N means P = A · N · Aᵀ for some invertible A -/
 structure MatCongr {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
     (P N : Matrix n n α) where
   A : Matrix n n α
@@ -42,6 +44,9 @@ namespace MatCongr
 variable {n α : Type*} [Fintype n] [DecidableEq n] [Field α]
   {N' N P : Matrix n n α}
 
+/-! ## Equivalence Relation Structure -/
+
+/-- Matrix congruence is symmetric -/
 @[symm] protected def symm (c : P ∼ₘ N) : N ∼ₘ P :=
   have := c.inv
   {
@@ -50,11 +55,13 @@ variable {n α : Type*} [Fintype n] [DecidableEq n] [Field α]
     cong := by simp only [c.cong, transpose_invOf]; group; simp
   }
 
+/-- Matrix congruence is reflexive -/
 @[refl] protected def refl (N : Matrix n n α) : N ∼ₘ N where
   A := 1
   inv := invertibleOne
   cong := by rw [one_mul, transpose_one, mul_one]
 
+/-- Matrix congruence is transitive -/
 @[trans] protected def trans (c₁ : N' ∼ₘ N) (c₂ : N ∼ₘ P) : N' ∼ₘ P where
     A := c₁.A * c₂.A
     inv := c₁.inv.mul c₂.inv
@@ -65,6 +72,9 @@ instance : Trans (@MatCongr n α _ _ _) MatCongr MatCongr where
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
+/-! ## Reindexing and Casting -/
+
+/-- Reindexing preserves matrix congruence -/
 def reindexMatCongr (e : n ≃ m) (c : N' ∼ₘ N) :
     reindexAlgEquiv α α e N' ∼ₘ reindexAlgEquiv α α e N :=
   have := c.inv
@@ -74,6 +84,7 @@ def reindexMatCongr (e : n ≃ m) (c : N' ∼ₘ N) :
     cong := by simp [c.cong]
   }
 
+/-- Rational cast preserves matrix congruence -/
 def ratCastMatCongrOfMatCongr (α : Type*) [Field α] [CharZero α]
     {A B : Matrix m m ℚ} (h : A ∼ₘ B) :
     RingHom.mapMatrix (Rat.castHom α) A ∼ₘ
@@ -84,10 +95,14 @@ def ratCastMatCongrOfMatCongr (α : Type*) [Field α] [CharZero α]
     have : ((Rat.castHom α).mapMatrix h.A)ᵀ = (Rat.castHom α).mapMatrix h.Aᵀ := rfl
     rw [this, ←RingHom.map_mul, ←RingHom.map_mul, ←h.cong]
 
+/-- Rational cast preserves the identity matrix -/
 theorem ratCast_one (α : Type*) [Field α] [CharZero α] :
     RingHom.mapMatrix (Rat.castHom α) (1 : Matrix m m ℚ) = 1 :=
   RingHom.map_one _
 
+/-! ## Direct Sum of Matrices -/
+
+/-- The direct sum of two matrices, as a block diagonal matrix -/
 def matDirectSum (M : Matrix m m α) (N : Matrix n n α) :=
   fromBlocks M 0 0 N
 
@@ -96,11 +111,13 @@ infixl:60 " ⊕ₘ " => matDirectSum
 variable {o : Type*} [Fintype o] [DecidableEq o]
   {M : Matrix m m α} {O : Matrix o o α}
 
+/-- Rational cast distributes over scalar multiplication -/
 theorem ratCast_smul [CharZero α] {a : ℚ} {A : Matrix m m ℚ} :
     RingHom.mapMatrix (Rat.castHom α) (a • A) =
     a • RingHom.mapMatrix (Rat.castHom α) A := by
   ext; simp [Rat.smul_def]
 
+/-- Rational cast distributes over direct sum -/
 theorem ratCast_oplus (α : Type*) [Field α] [CharZero α]
     {A : Matrix m m ℚ} {B : Matrix n n ℚ} :
     RingHom.mapMatrix (Rat.castHom α) (A ⊕ₘ B) =
@@ -109,6 +126,7 @@ theorem ratCast_oplus (α : Type*) [Field α] [CharZero α]
   rw [matDirectSum, matDirectSum]
   aesop
 
+/-- Associativity of direct sum up to reindexing -/
 def matDirectSumAssoc :
     reindexAlgEquiv α α (Equiv.sumAssoc _ _ _) (M ⊕ₘ N ⊕ₘ O) ∼ₘ
     M ⊕ₘ (N ⊕ₘ O) where
@@ -116,6 +134,7 @@ def matDirectSumAssoc :
   inv := invertibleOne
   cong := by aesop
 
+/-- Inverse associativity of direct sum up to reindexing -/
 def matDirectSumAssoc' :
     reindexAlgEquiv α α (Equiv.sumAssoc _ _ _).symm (M ⊕ₘ (N ⊕ₘ O)) ∼ₘ
     M ⊕ₘ N ⊕ₘ O where
@@ -123,6 +142,7 @@ def matDirectSumAssoc' :
   inv := invertibleOne
   cong := by aesop
 
+/-- Congruence of flat direct sums lifts to nested direct sums -/
 def matCongrAssocOfMatCongr {M' : Matrix m m α} {O' : Matrix o o α}
     (h : M ⊕ₘ N ⊕ₘ O ∼ₘ M' ⊕ₘ N' ⊕ₘ O') : M ⊕ₘ (N ⊕ₘ O) ∼ₘ M' ⊕ₘ (N' ⊕ₘ O') := by
   calc
@@ -133,13 +153,16 @@ def matCongrAssocOfMatCongr {M' : Matrix m m α} {O' : Matrix o o α}
     _ ∼ₘ M' ⊕ₘ (N' ⊕ₘ O') := matDirectSumAssoc
 
 omit [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] in
+/-- The direct sum of two symmetric matrices is symmetric -/
 theorem isSymm_oplus {M : Matrix m m α} {N : Matrix n n α}
     (hM : M.IsSymm) (hN : N.IsSymm) : (M ⊕ₘ N).IsSymm :=
   IsSymm.fromBlocks hM transpose_zero hN
 
+/-- The determinant of a direct sum is the product of the determinants -/
 theorem det_oplus : det (M ⊕ₘ N) = det M * det N := by
   rw [matDirectSum, det_fromBlocks_zero₂₁]
 
+/-- Congruence of direct sums is compatible with reindexing the left factor -/
 def matCongrOplusReindexOfMatCongr {m' : Type*} [Fintype m'] [DecidableEq m']
     {M' : Matrix m m α} {N' : Matrix n n α} (e : m ≃ m') (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) :
     reindexAlgEquiv α α e M' ⊕ₘ N' ∼ₘ reindexAlgEquiv α α e M ⊕ₘ N :=
@@ -157,22 +180,27 @@ def matCongrOplusReindexOfMatCongr {m' : Type*} [Fintype m'] [DecidableEq m']
   }
 
 omit [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] in
+/-- Scalar multiplication distributes over direct sum -/
 theorem smul_oplus {a : α} : a • (M ⊕ₘ N) = a • M ⊕ₘ a • N := by
   rw [matDirectSum]; aesop
 
 omit [Fintype n] [Fintype m] in
+/-- The direct sum of two identity matrices is the identity -/
 theorem one_oplus_one : (1 : Matrix m m α) ⊕ₘ (1 : Matrix n n α) = 1 := by
   rw [matDirectSum, fromBlocks_one]
 
+/-- Scalar multiplication preserves matrix congruence -/
 def matCongrSmulOfMatCongr {a : α} (h : N ∼ₘ P) : a • N ∼ₘ a • P where
   A := h.A
   inv := h.inv
   cong := by simp only [h.cong, mul_smul_comm, smul_mul_assoc]
 
 omit [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] in
+/-- Transpose distributes over direct sum -/
 theorem transpose_oplus : (M ⊕ₘ N)ᵀ = Mᵀ ⊕ₘ Nᵀ := by
   simp [matDirectSum, fromBlocks_transpose]
 
+/-- Congruence on the left factor of a direct sum -/
 noncomputable def matCongrOplusRightOfMatCongr
     (M : Matrix m m α) (h : N ∼ₘ P) : N ⊕ₘ M ∼ₘ P ⊕ₘ M where
   A := h.A ⊕ₘ 1
@@ -184,25 +212,30 @@ noncomputable def matCongrOplusRightOfMatCongr
   cong := by
     simp [matDirectSum, fromBlocks_multiply, fromBlocks_transpose, h.cong]
 
+/-- Commutativity of direct sum up to reindexing -/
 theorem reindexAlgEquiv_oplus (M : Matrix m m α) (N : Matrix n n α) :
     reindexAlgEquiv α α (Equiv.sumComm _ _) (M ⊕ₘ N) = N ⊕ₘ M := by
   simp [matDirectSum]
 
+/-- Swapping the second and third factors of a triple direct sum via reindexing -/
 theorem reindexAlgEquiv_oplus_oplus
     (M : Matrix m m α) (N : Matrix n n α) (O : Matrix o o α) :
     reindexAlgEquiv α α (Equiv.sumCongr (Equiv.refl _) (Equiv.sumComm _ _))
       (M ⊕ₘ (N ⊕ₘ O)) = (M ⊕ₘ (O ⊕ₘ N)) := by
   aesop
 
+/-- Congruence of direct sums is compatible with swapping factors -/
 def matCongrCommOfMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
     (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) : N' ⊕ₘ M' ∼ₘ N ⊕ₘ M := by
   rw [←reindexAlgEquiv_oplus M N, ←reindexAlgEquiv_oplus M' N']
   exact reindexMatCongr _ h
 
+/-- Congruence on the right factor of a direct sum -/
 noncomputable def matCongrOplusLeftOfMatCongr
     (M : Matrix m m α) (h : N ∼ₘ P) : M ⊕ₘ N ∼ₘ M ⊕ₘ P :=
   matCongrOplusRightOfMatCongr M h |> matCongrCommOfMatCongr
 
+/-- Insert a fixed matrix into the middle of a congruent direct sum -/
 noncomputable def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
     (O : Matrix o o α) (h : M' ⊕ₘ N' ∼ₘ M ⊕ₘ N) :
     M' ⊕ₘ (O ⊕ₘ N') ∼ₘ M ⊕ₘ (O ⊕ₘ N) := by
@@ -212,6 +245,12 @@ noncomputable def oplusInsertMatCongr {M' : Matrix m m α} {N' : Matrix n n α}
   rw [←reindexAlgEquiv_oplus_oplus M' N' O, ←reindexAlgEquiv_oplus_oplus M N O]
   exact reindexMatCongr _ h'
 
+/-! ## Four Squares Identity
+
+Using Lagrange's four-square theorem, we show that m · I ∼ₘ I when 4 divides the matrix size.
+-/
+
+/-- If 4 | n, then m · I ∼ₘ I for any positive integer m -/
 noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     {m : ℤ} (mpos : 0 < m) : (m : α) • (1 : Matrix n n α) ∼ₘ (1 : Matrix n n α) := by
   have this : ∃ a b c d : ℕ, a^2 + b^2 + c^2 + d^2 = m.toNat :=
@@ -271,6 +310,13 @@ noncomputable def matCongrOneOfFourDiv [CharZero α] (hn : 4 ∣ Fintype.card n)
     cong := by simp only [HA, A', A, Int.cast_smul_eq_zsmul, zsmul_eq_mul, mul_one]
       }
 
+/-! ## Quadratic Form Correspondence
+
+We establish the correspondence between matrix congruence and isometry of quadratic forms,
+enabling the use of Witt cancellation.
+-/
+
+/-- A matrix congruence induces an isometry of the associated quadratic forms -/
 def MatCongr_toIsometryEquiv
     {M N : Matrix m m α}
     (h : M ∼ₘ N) :
@@ -297,6 +343,7 @@ def MatCongr_toIsometryEquiv
   rw [dotProduct_mulVec, vecMul_vecMul, ← dotProduct_mulVec]
   simp only [mulVec_mulVec, ← h.cong]
 
+/-- The quadratic form of a 2×2 diagonal matrix evaluates as a · x₁² + b · x₂² -/
 theorem toQuadraticMap_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
     let M := a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ b • (1 : Matrix (Fin 1) (Fin 1) α)
     M.toQuadraticMap' x = a * (x (Sum.inl 0))^2 + b * (x (Sum.inr 0))^2 := by
@@ -309,6 +356,7 @@ theorem toQuadraticMap_two_by_two {a b : α} (x : Fin 1 ⊕ Fin 1 → α):
   simp only [smul_eq_mul, Fin.default_eq_zero]
   ring
 
+/-- The range of a 2×2 diagonal quadratic form is {a · x₁² + b · x₂²} -/
 theorem range_of_two_by_two (a b : α) :
     Set.range (a • 1 ⊕ₘ b • 1 : Matrix (Fin 1 ⊕ Fin 1) _ _).toQuadraticMap' =
     {z | ∃ x₁ x₂, z = a * x₁^2 + b * x₂^2} := by
@@ -322,6 +370,7 @@ theorem range_of_two_by_two (a b : α) :
     rw [toQuadraticMap_two_by_two]
     simp [Sum.elim_inl, Sum.elim_inr]
 
+/-- Congruent 2×2 diagonal matrices represent the same values -/
 theorem matCongr_two_by_two_condition {a b c d : α}
     (h : a • (1 : Matrix (Fin 1) (Fin 1) α) ⊕ₘ
     b • (1 : Matrix (Fin 1) (Fin 1) α) ∼ₘ
@@ -339,6 +388,7 @@ theorem matCongr_two_by_two_condition {a b c d : α}
   obtain ⟨_, _, h⟩ := hrng.symm.subset (by use w, x)
   exact ⟨_, _, h.symm⟩
 
+/-- Two symmetric matrices are equal if their associated quadratic forms agree -/
 theorem matrix_ext_of_isSymm {n : Type*} [Fintype n] [DecidableEq n]
     {R : Type*} [Field R] [Invertible (2 : R)]
     {A B : Matrix n n R}
@@ -367,6 +417,7 @@ theorem matrix_ext_of_isSymm {n : Type*} [Fintype n] [DecidableEq n]
     simp only [Matrix.toBilin'_apply']
     exact h x
 
+/-- An isometry of quadratic forms induces a matrix congruence -/
 def IsometryEquiv_toMatCongr [Invertible (2 : α)]
     {M N : Matrix m m α} (hM : M.IsSymm) (hN : N.IsSymm)
     (e : M.toQuadraticMap'.IsometryEquiv N.toQuadraticMap') :
@@ -403,6 +454,7 @@ def IsometryEquiv_toMatCongr [Invertible (2 : α)]
     simp only [h_quad, zero_mulVec, dotProduct_zero, implies_true]
   exact ⟨Aᵀ, invertibleTranspose A, by rw [transpose_transpose, sub_eq_zero.mp h_eq]⟩
 
+/-- The quadratic form of a direct sum is isometric to the product of quadratic forms -/
 noncomputable def isometryEquiv_oplus_prod
     {m' n' : Type*} [Fintype m'] [DecidableEq m'] [Fintype n'] [DecidableEq n']
     (M : Matrix m' m' α) (N : Matrix n' n' α) :
@@ -416,6 +468,9 @@ noncomputable def isometryEquiv_oplus_prod
       Equiv.sumArrowEquivProdArrow, Function.comp, Sum.elim_inl, Sum.elim_inr, zero_apply,
       zero_mul, Finset.sum_const_zero, add_zero, zero_add]
 
+/-! ## Witt Cancellation -/
+
+/-- Witt cancellation for matrix congruence: M ⊕ₘ N ∼ₘ M ⊕ₘ P implies N ∼ₘ P -/
 noncomputable def oplusLeftCancel [Invertible (2 : α)]
     (hN : IsSymm N) (hP : IsSymm P)
     (h : M ⊕ₘ N ∼ₘ M ⊕ₘ P) : N ∼ₘ P := by
