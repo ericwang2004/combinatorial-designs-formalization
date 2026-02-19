@@ -11,7 +11,7 @@ Formalization of basic results from combinatorial design theory in Lean 4 using 
 
 ## Building
 
-1. Clone the repository as usual. Then in the repo folder:
+Clone the repository as usual. Then in the repo folder:
 
 ```bash
 lake exe cache get
