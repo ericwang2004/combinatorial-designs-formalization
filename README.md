@@ -11,20 +11,7 @@ Formalization of basic results from combinatorial design theory in Lean 4 using 
 
 ## Building
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/ericwang2004/combinatorial-designs-formalization.git
-```
-or
-
-```bash
-git clone git@github.com:ericwang2004/combinatorial-designs-formalization.git
-```
-
-```bash
-cd combinatorial-designs-formalization
-```
+1. Clone the repository as usual.
 
 2. Download the Mathlib cache (significantly reduces build time):
 
