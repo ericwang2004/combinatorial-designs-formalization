@@ -23,7 +23,7 @@ open Finset
 namespace CombinatorialDesign
 
 variable (ι X G : Type*) [Fintype G] [DecidableEq G] [AddGroup G]
-  [Fintype ι] [Fintype X] (t k l r : ℕ)
+  [Fintype ι] (t k l r : ℕ)
 
 /-- A design is a collection of finite subsets (blocks) of a set X, indexed by ι -/
 structure Design where
@@ -34,11 +34,11 @@ def reindexDesign {X Y ι ι' : Type*} (e : X ≃ Y) (hι : ι' ≃ ι)
     (Φ : Design ι X) : Design ι' Y where
   blocks i := hι i |> Φ.blocks |> Finset.map e.toEmbedding
 
-variable [DecidableEq X]
-
 /-- A block design is a design where all blocks have the same size k -/
 structure BlockDesign extends Design ι X where
   uniform : ∀ i, #(blocks i) = k
+
+variable [DecidableEq X]
 
 /-- A regular design is a design where each point appears in exactly r blocks -/
 structure RegularDesign extends Design ι X where
@@ -50,6 +50,8 @@ structure BalancedDesign extends Design ι X where
 
 /-- A pairwise balanced design: a 2-wise balanced design -/
 abbrev PBD := BalancedDesign ι X 2 l
+
+variable [Fintype X]
 
 /-- An incomplete design is a block design with block size strictly less than the number of points -/
 structure IncompleteDesign extends BlockDesign ι X k where
