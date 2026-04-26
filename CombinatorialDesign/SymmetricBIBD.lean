@@ -262,9 +262,9 @@ noncomputable def brcKey [Inhabited X] (Φ : BIBD X X k l)
     A := A'
     inv := by
       have detD : det D ≠ 0 := by
-        simp [D, det_oplus, hl]
+        simp [D, hl]
       have detE : det E ≠ 0 := by
-        simp [E, det_oplus, hl, sub_eq_zero, hkl, hkl.symm]
+        simp [E, hl, sub_eq_zero, hkl, hkl.symm]
       have detA' : det A' ≠ 0 := by
         intro h
         exact detE (by calc

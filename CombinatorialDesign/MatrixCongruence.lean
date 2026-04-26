@@ -4,6 +4,7 @@ import Mathlib.NumberTheory.SumFourSquares
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Matrix Congruence
@@ -28,7 +29,7 @@ Witt cancellation, and the four-squares identity.
 The lemmas needed for Witt cancellation are in `WittCancellation.lean`.
 -/
 
-open Matrix Finset
+open Matrix Finset Equiv
 
 /-- Matrix congruence: P ∼ₘ N means P = A · N · Aᵀ for some invertible A -/
 structure MatCongr {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
@@ -39,10 +40,10 @@ structure MatCongr {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
 
 infixl:55 " ∼ₘ " => MatCongr
 
-namespace MatCongr
-
 variable {n α : Type*} [Fintype n] [DecidableEq n] [Field α]
   {N' N P : Matrix n n α}
+
+namespace MatCongr
 
 /-! ## Equivalence Relation Structure -/
 
@@ -103,7 +104,7 @@ theorem ratCast_one (α : Type*) [Field α] [CharZero α] :
 /-! ## Direct Sum of Matrices -/
 
 /-- The direct sum of two matrices, as a block diagonal matrix -/
-def matDirectSum (M : Matrix m m α) (N : Matrix n n α) :=
+abbrev matDirectSum (M : Matrix m m α) (N : Matrix n n α) :=
   fromBlocks M 0 0 N
 
 infixl:60 " ⊕ₘ " => matDirectSum
@@ -486,3 +487,85 @@ noncomputable def oplusLeftCancel [Invertible (2 : α)]
   exact IsometryEquiv_toMatCongr hN hP h_cancel
 
 end MatCongr
+
+/- ## Footnote: Heterogeneous matrix congruence
+
+It is possible to define a notion of matrix congruence across
+matrices of different index types. We show that this is equivalent,
+in a certain sense, to the homogeneous version defined and used
+throughout this file. However, we prefer the homogeneous version
+for the ease of proving properties about it. In return, we
+sacrifice some convenience in proving the Bruck-Ryser-Chowla
+theorem, but not much.
+-/
+
+section HeterogeneousMatCongr
+
+/-- Heterogeneous matrix congruence -/
+structure hMatCongr {m n α : Type*}
+    [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing α]
+    (M : Matrix m m α) (N : Matrix n n α) extends m ≃ n where
+  A : Matrix n n α
+  inv : Invertible A
+  cong : reindex toEquiv toEquiv M = A * N * Aᵀ
+
+/-- Reindexing is the same as conjugating by a permutation matrix -/
+theorem reindex_eq_perm_conj (e : n ≃ n) :
+    reindex e e N =
+    (Perm.permMatrix _ e)ᵀ * N * (Perm.permMatrix _ e) := by
+  ext _ b
+  simp only [reindex_apply, submatrix_apply,
+    transpose_permMatrix, mul_apply, PEquiv.toMatrix_apply,
+    toPEquiv_apply, Perm.coe_inv, Option.mem_def, Option.some.injEq,
+    ite_mul, one_mul, zero_mul, sum_ite_eq, mem_univ,
+    ↓reduceIte, mul_ite, mul_one, mul_zero]
+  rw [Fintype.sum_eq_single (e.symm b)]
+  · simp only [apply_symm_apply]
+    rfl
+  · intro x hx
+    aesop
+
+/-- Transpose of a permutation matrix is its own inverse -/
+theorem permMatrix_inv (e : n ≃ n) :
+    (Perm.permMatrix α e)ᵀ * (Perm.permMatrix α e) = 1 := by
+  rw [transpose_permMatrix, ←permMatrix_mul, mul_inv_cancel, permMatrix_one]
+
+theorem permMatrix_inv' (e : n ≃ n) :
+    (Perm.permMatrix α e) * (Perm.permMatrix α e)ᵀ = 1 := by
+  rw [←permMatrix_inv e.symm, transpose_permMatrix, transpose_permMatrix]
+  rfl
+
+/-- Permutation matrices are invertible -/
+def invertiblePermMatrix (e : n ≃ n) :
+    Invertible (Perm.permMatrix α e) :=
+  ⟨(Perm.permMatrix α e)ᵀ, permMatrix_inv _, permMatrix_inv' _⟩
+
+/-- Equivalence, in some sense, of heterogeneous matrix congruence
+and regular matrix congruence (as defined earlier). We show that
+if `M` and `N` are both of type `Matrix n n α` and are
+heterogeneously congruent, then they are homogeneously congruent,
+i.e. `M ∼ₘ N`.
+-/
+def matCongrOfHCongr (hc : hMatCongr N P) : N ∼ₘ P where
+  A := (Equiv.Perm.permMatrix _ hc.toEquiv) * hc.A
+  inv := by
+    have := hc.inv
+    have := invertiblePermMatrix (α := α) hc.toEquiv
+    apply invertibleMul
+  cong := by
+    symm
+    have h := hc.cong
+    rw [reindex_eq_perm_conj] at h
+    calc
+      _ = Perm.permMatrix α hc.toEquiv * (hc.A * P * hc.Aᵀ) *
+          (Perm.permMatrix α hc.toEquiv)ᵀ := by
+        rw [transpose_mul]; group
+      _ = (Perm.permMatrix α hc.toEquiv *
+          (Perm.permMatrix α hc.toEquiv)ᵀ) * N *
+          ((Perm.permMatrix α hc.toEquiv) *
+          (Perm.permMatrix α hc.toEquiv)ᵀ) := by
+        rw [←h]; group
+      _ = _ := by
+        rw [permMatrix_inv', one_mul, mul_one]
+
+end HeterogeneousMatCongr
