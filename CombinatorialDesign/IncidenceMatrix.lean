@@ -11,7 +11,6 @@ algebraic properties of incidence matrices and combinatorial properties of desig
 
 * `toIncMat α Φ` - The incidence matrix of a design Φ over a type α
 * `fromIncMat α M` - The design corresponding to a 0-1 matrix M
-* `dual α Φ` - The dual design, obtained by transposing the incidence matrix
 * `rpbdCondition α l r M` - The algebraic condition on M characterizing RPBDs
 * `bibdCondition α k l r M` - The algebraic condition on M characterizing BIBDs
 
@@ -46,7 +45,6 @@ def toIncMat (α : Type*) [One α] [Zero α] (Φ : Design ι X) :
 def fromIncMat (α : Type*) [DecidableEq α] [One α] (M : Matrix X ι α) : Design ι X where
   blocks := fun i ↦ {x | M x i = 1}
 
-
 omit [DecidableEq ι] in
 /-- Any column of the incidence matrix of a (v, k, λ)-BIBD sums to k -/
 theorem col_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] (j : ι) :
@@ -60,32 +58,6 @@ theorem row_sum_incmat (α : Type*) [DecidableEq α] [AddCommMonoidWithOne α] [
     ∑ j, (toIncMat α Φ.toDesign) x j = rep Φ := by
   simp only [toIncMat, of_apply, sum_boole]
   rw [←rep_eq_rep_elem _ x, rep_elem]
-
-/-! ## Dual Design -/
-
-/-- The dual design, obtained by transposing the incidence matrix -/
-def dual (α : Type*) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
-    : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
-
-/-- The dual of a BIBD has block size r, regularity k, and pairwise block intersection λ -/
-theorem properties_of_dual {α : Type*} [Inhabited X] [DecidableEq α]
-    [One α] [Zero α] [NeZero (R := α) 1] :
-    let Ψ := dual α Φ.toDesign
-    (∀ i, #(Ψ.blocks i) = rep Φ) ∧
-    (∀ y, #{i | y ∈ Ψ.blocks i} = k) ∧
-    (∀ i j, i ≠ j → #(Ψ.blocks i ∩ Ψ.blocks j) = l) := by
-  simp only [transpose_apply, of_apply, ite_eq_left_iff, zero_ne_one, imp_false,
-    Decidable.not_not, mem_filter, mem_univ, true_and, ne_eq, dual, fromIncMat, toIncMat]
-  constructor
-  · intro i
-    rw [←rep_eq_rep_elem _ _, rep_elem]
-  · constructor
-    · intro y
-      rw [filter_univ_mem, Φ.uniform]
-    · intro i j hij
-      rw [filter_inter, univ_inter, filter_filter]
-      convert Φ.balance {i, j} (card_pair hij) using 2
-      ext x; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
 
 /-! ## RPBD and BIBD Conditions
 

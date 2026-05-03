@@ -44,6 +44,9 @@ variable [DecidableEq X]
 structure RegularDesign extends Design ι X where
   regularity : ∀ x, #{i | x ∈ blocks i} = r
 
+/-- A regular block design is both regular and a block design -/
+structure RegularBlockDesign extends BlockDesign ι X k, RegularDesign ι X r
+
 /-- A t-wise balanced design is a design where any t points appear together in exactly λ blocks -/
 structure BalancedDesign extends Design ι X where
   balance : ∀ s : Finset X, #s = t → #{i | s ⊆ blocks i} = l
@@ -58,7 +61,7 @@ structure IncompleteDesign extends BlockDesign ι X k where
   incomplete : k < Fintype.card X
 
 /-- A regular pairwise balanced design: both regular and 2-wise balanced -/
-structure RPBD extends RegularDesign ι X r, BalancedDesign ι X 2 l where
+structure RPBD extends RegularDesign ι X r, BalancedDesign ι X 2 l
 
 /-- A nontrivial RPBD: an RPBD with at least one block of size strictly between 0 and |X| -/
 structure nontrivialRPBD extends RPBD ι X l r where

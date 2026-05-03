@@ -8,6 +8,7 @@ This file defines several ways of constructing designs from other designs.
 
 ## Main Definitions
 
+* The dual design, obtained by transposing the incidence matrix
 * Sum construction - combines two designs over disjoint index types, adding their parameters
 * Complement construction - replaces each block with its complement in the point set
 * Derived and residual constructions - restrict a symmetric BIBD to or away from a given block
@@ -22,14 +23,45 @@ This file defines several ways of constructing designs from other designs.
 * Stinson, Combinatorial Designs, Constructions and Analysis
 -/
 
-open CombinatorialDesign
+open CombinatorialDesign Matrix
 namespace CombinatorialDesign
 
-variable {ι ι₁ ι₂ X : Type*} [Fintype X] [DecidableEq X]
+variable {ι ι₁ ι₂ X α : Type*} [Fintype X] [DecidableEq X]
   [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
-  {k l₁ l₂ l r₁ r₂ t : ℕ}
+  {k l₁ l₂ l r₁ r₂ t : ℕ} [One α] [Zero α] [DecidableEq α] [NeZero (R := α) 1]
 open Finset
 
+/-! ## Dual Design -/
+
+/-- The dual design, obtained by transposing the incidence matrix -/
+def Design.dual (α : Type*) [DecidableEq α] [One α] [Zero α] (Φ : Design ι X)
+    : Design X ι := fromIncMat α (toIncMat α Φ)ᵀ
+
+/-- The dual of a BIBD has block size r, regularity k, and pairwise block intersection λ -/
+theorem properties_of_dual (Φ : BIBD ι X k l) [Inhabited X] :
+    let Ψ := Design.dual α Φ.toDesign
+    (∀ i, #(Ψ.blocks i) = rep Φ) ∧
+    (∀ y, #{i | y ∈ Ψ.blocks i} = k) ∧
+    (∀ i j, i ≠ j → #(Ψ.blocks i ∩ Ψ.blocks j) = l) := by
+  simp only [transpose_apply, of_apply, ite_eq_left_iff, zero_ne_one, imp_false,
+    Decidable.not_not, mem_filter, mem_univ, true_and, ne_eq, Design.dual, fromIncMat, toIncMat]
+  constructor
+  · intro _
+    rw [←rep_eq_rep_elem _ _, rep_elem]
+  · constructor
+    · intro y
+      rw [filter_univ_mem, Φ.uniform]
+    · intro i j hij
+      rw [filter_inter, univ_inter, filter_filter]
+      convert Φ.balance {i, j} (card_pair hij) using 2
+      ext _; simp only [insert_subset_iff, singleton_subset_iff, and_comm]
+
+/-- The dual of a BIBD is a regular block design -/
+def BIBD.dual (Φ : BIBD ι X k l) [Inhabited X] :
+    RegularBlockDesign X ι (rep Φ) k where
+  blocks := Design.dual α Φ.toDesign |>.blocks
+  uniform := properties_of_dual _ |>.1
+  regularity := properties_of_dual _ |>.2.1
 
 /-! ## Sum Construction
 
